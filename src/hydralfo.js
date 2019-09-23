@@ -1,4 +1,3 @@
-
 // eslint-disable-next-line no-empty-function
 const ud = ((function () {})());
 
@@ -53,18 +52,32 @@ export const expand_args = (arg_def, args) => {
     return vals;
 };
 
-export const get_time = (args) => {
+export const get_time = (run_args, gen_args, allow_undef = false) => {
     let time = ud;
-    if (typeof args === 'object' && !Array.isArray(args)) {
-        const {time: atime} = args;
+    let namedargs = run_args;
+
+    if (Array.isArray(namedargs) && namedargs.length > 0) {
+        [namedargs] = namedargs;
+    }
+
+    if (typeof namedargs === 'object' && !Array.isArray(namedargs)) {
+        const {time: atime} = run_args;
         time = atime;
     }
 
     if (typeof time !== 'undefined') {
         return time;
     }
+    if (typeof gen_args !== 'undefined') {
+        if (typeof gen_args.values !== 'undefined' && typeof gen_args.values.time !== 'undefined') {
+            return gen_args.values.time;
+        }
+    }
     if (typeof window !== 'undefined' && typeof window.time !== 'undefined') {
         return window.time;
+    }
+    if (allow_undef) {
+        return time;
     }
     return new Date().getTime() / 1000.0;
 };
@@ -146,7 +159,7 @@ _functions.time = (args) => {
     return (run_args, gen_args) => {
         const [sv, ov] = freeze_values([scale, offset], run_args, gen_args);
 
-        return (get_time(...run_args) * sv) + ov;
+        return (get_time(run_args, gen_args) * sv) + ov;
     };
 };
 
@@ -267,18 +280,20 @@ _functions.choose = (args) => {
     };
 };
 
-_functions.sin = (...args) => {
+_functions.sin = (args) => {
     const {f: frequency, s: scale, o: offset} = expand_args({f: 1, s: 1, o: 0}, args);
 
     return (run_args, gen_args) => {
         const [fv, sv, ov] = freeze_values([frequency, scale, offset], run_args, gen_args);
         let time = 0;
 
-        if (gen_args.input) {
-            time = gen_args.input;
+        if (typeof gen_args.input === 'undefined') {
+            time = get_time(run_args, gen_args);
+            
         } else {
-            time = get_time(...run_args, gen_args);
+            time = gen_args.input;
         }
+        time = undefault(time, Math.PI);
 
         return (((Math.sin(time * 2 * Math.PI * fv) / 2) + 0.5) * sv) + ov;
     };
@@ -289,7 +304,7 @@ _functions.floor = (args) => {
 
     return (run_args, gen_args) => {
         const dv = freeze_values(digits, run_args, gen_args);
-        const fact = Math.power(10, dv);
+        const fact = Math.pow(10, dv);
 
         return Math.floor(gen_args.input * fact) / fact;
     };
@@ -444,7 +459,7 @@ const run_calls = (global_state, instance_state, calls, args) => {
         , private_state: {}
     };
 
-    gen_args.values.initial_time = get_time(gen_args.values);
+    gen_args.values.initial_time = get_time(gen_args.values, gen_args.values);
     gen_args.values.time = gen_args.values.initial_time;
 
     run_args[0] = gen_args.values;
@@ -493,20 +508,26 @@ export const start = (global_state = {}) => sub_call(global_state, []);
 const setup_init_call = (fun, ...args) => (start()[fun])(...args);
 
 /* eslint-disable no-multi-spaces */
-export const add    = (...args) => setup_init_call("add", ...args);
-export const time   = (...args) => setup_init_call("time", ...args);
-export const speed  = (...args) => setup_init_call("speed", ...args);
-export const fast   = (...args) => setup_init_call("fast", ...args);
-export const mul    = (...args) => setup_init_call("mul", ...args);
-export const mod    = (...args) => setup_init_call("mod", ...args);
-export const div    = (...args) => setup_init_call("div", ...args);
-export const range  = (...args) => setup_init_call("rang", ...args);
-export const iter   = (...args) => setup_init_call("iter", ...args);
-export const choose = (...args) => setup_init_call("choose", ...args);
-export const slew   = (...args) => setup_init_call("slew", ...args);
-export const set    = (...args) => setup_init_call("set", ...args);
-export const rnd    = (...args) => setup_init_call("rnd", ...args);
 export const use    = (...args) => setup_init_call("use", ...args);
 export const used   = (...args) => setup_init_call("used", ...args);
 export const noop   = (...args) => setup_init_call("noop", ...args);
 export const gen   =  (...args) => setup_init_call("gen", ...args);
+
+export const set    = (...args) => setup_init_call("set", ...args);
+export const rnd    = (...args) => setup_init_call("rnd", ...args);
+
+export const add    = (...args) => setup_init_call("add", ...args);
+export const mul    = (...args) => setup_init_call("mul", ...args);
+export const mod    = (...args) => setup_init_call("mod", ...args);
+export const div    = (...args) => setup_init_call("div", ...args);
+
+export const time   = (...args) => setup_init_call("time", ...args);
+export const speed  = (...args) => setup_init_call("speed", ...args);
+export const fast   = (...args) => setup_init_call("fast", ...args);
+
+export const slew   = (...args) => setup_init_call("slew", ...args);
+
+export const sin    = (...args) => setup_init_call("sin", ...args);
+export const range  = (...args) => setup_init_call("range", ...args);
+export const iter   = (...args) => setup_init_call("iter", ...args);
+export const choose = (...args) => setup_init_call("choose", ...args);

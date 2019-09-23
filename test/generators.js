@@ -26,4 +26,28 @@ describe('Generators', function () {
             });
         });
     });
+    describe('choose', function () {
+        it("looks like a sine wave", function () {
+            const nume = 200;
+            const values = Array(nume).fill(1)
+                .map((_, i) => Number(i) / nume)
+                .map((x) => [x, Math.sin(x * 2 * Math.PI)]);
+
+            const threshold = 0.00001;
+            values.map(([x, e]) => [
+                x
+                , e
+                , [L.sin({f: 1, s: 2, o: -1}).run({time: x})
+                    , L.sin(1, 2, -1).run({time: x})
+                ]])
+                .forEach(([x, e, rall], i) => {
+                    rall.forEach((r, ri) => {
+                        const res = Math.abs(r - e);
+        
+                        assert.equal(res < threshold, true, `${i}/${ri}: x=${x} e=${e} r=${r} res=${res}`);
+                    });
+                });
+
+        });
+    });
 });

@@ -4,7 +4,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.gen = exports.noop = exports.used = exports.use = exports.rnd = exports.set = exports.slew = exports.choose = exports.iter = exports.range = exports.div = exports.mod = exports.mul = exports.fast = exports.speed = exports.time = exports.add = exports.start = exports.freeze_values = exports.get_time = exports.expand_args = exports.undefault = exports.mix_values = void 0;
+exports.choose = exports.iter = exports.range = exports.sin = exports.slew = exports.fast = exports.speed = exports.time = exports.div = exports.mod = exports.mul = exports.add = exports.rnd = exports.set = exports.gen = exports.noop = exports.used = exports.use = exports.start = exports.freeze_values = exports.get_time = exports.expand_args = exports.undefault = exports.mix_values = void 0;
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -100,11 +100,21 @@ var expand_args = function expand_args(arg_def, args) {
 
 exports.expand_args = expand_args;
 
-var get_time = function get_time(args) {
+var get_time = function get_time(run_args, gen_args) {
+  var allow_undef = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
   var time = ud;
+  var namedargs = run_args;
 
-  if (_typeof(args) === 'object' && !Array.isArray(args)) {
-    var atime = args.time;
+  if (Array.isArray(namedargs) && namedargs.length > 0) {
+    var _namedargs = namedargs;
+
+    var _namedargs2 = _slicedToArray(_namedargs, 1);
+
+    namedargs = _namedargs2[0];
+  }
+
+  if (_typeof(namedargs) === 'object' && !Array.isArray(namedargs)) {
+    var atime = run_args.time;
     time = atime;
   }
 
@@ -112,8 +122,18 @@ var get_time = function get_time(args) {
     return time;
   }
 
+  if (typeof gen_args !== 'undefined') {
+    if (typeof gen_args.values !== 'undefined' && typeof gen_args.values.time !== 'undefined') {
+      return gen_args.values.time;
+    }
+  }
+
   if (typeof window !== 'undefined' && typeof window.time !== 'undefined') {
     return window.time;
+  }
+
+  if (allow_undef) {
+    return time;
   }
 
   return new Date().getTime() / 1000.0;
@@ -235,7 +255,7 @@ _functions.time = function (args) {
         sv = _freeze_values6[0],
         ov = _freeze_values6[1];
 
-    return get_time.apply(void 0, _toConsumableArray(run_args)) * sv + ov;
+    return get_time(run_args, gen_args) * sv + ov;
   };
 };
 
@@ -398,11 +418,7 @@ _functions.choose = function (args) {
   };
 };
 
-_functions.sin = function () {
-  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-    args[_key] = arguments[_key];
-  }
-
+_functions.sin = function (args) {
   var _expand_args9 = expand_args({
     f: 1,
     s: 1,
@@ -421,12 +437,13 @@ _functions.sin = function () {
 
     var time = 0;
 
-    if (gen_args.input) {
-      time = gen_args.input;
+    if (typeof gen_args.input === 'undefined') {
+      time = get_time(run_args, gen_args);
     } else {
-      time = get_time.apply(void 0, _toConsumableArray(run_args).concat([gen_args]));
+      time = gen_args.input;
     }
 
+    time = undefault(time, Math.PI);
     return (Math.sin(time * 2 * Math.PI * fv) / 2 + 0.5) * sv + ov;
   };
 };
@@ -439,7 +456,7 @@ _functions.floor = function (args) {
 
   return function (run_args, gen_args) {
     var dv = freeze_values(digits, run_args, gen_args);
-    var fact = Math.power(10, dv);
+    var fact = Math.pow(10, dv);
     return Math.floor(gen_args.input * fact) / fact;
   };
 };
@@ -648,7 +665,7 @@ var run_calls = function run_calls(global_state, instance_state, calls, args) {
     instance_state: instance_state,
     private_state: {}
   };
-  gen_args.values.initial_time = get_time(gen_args.values);
+  gen_args.values.initial_time = get_time(gen_args.values, gen_args.values);
   gen_args.values.time = gen_args.values.initial_time;
   run_args[0] = gen_args.values;
   calls.forEach(function (_ref2) {
@@ -681,8 +698,8 @@ var sub_call = function sub_call(global_state, prev_calls, fun) {
   }
 
   var rfun = function rfun() {
-    for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-      args[_key2] = arguments[_key2];
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
     }
 
     return run_calls(global_state, instance_state, calls, args);
@@ -695,8 +712,8 @@ var sub_call = function sub_call(global_state, prev_calls, fun) {
         gen = _ref5[1];
 
     rfun[name] = function () {
-      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
       }
 
       return sub_call(global_state, calls.map(function (_ref6) {
@@ -720,8 +737,8 @@ exports.start = start;
 var setup_init_call = function setup_init_call(fun) {
   var _start;
 
-  for (var _len4 = arguments.length, args = new Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
-    args[_key4 - 1] = arguments[_key4];
+  for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+    args[_key3 - 1] = arguments[_key3];
   }
 
   return (_start = start())[fun].apply(_start, args);
@@ -729,139 +746,9 @@ var setup_init_call = function setup_init_call(fun) {
 /* eslint-disable no-multi-spaces */
 
 
-var add = function add() {
-  for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-    args[_key5] = arguments[_key5];
-  }
-
-  return setup_init_call.apply(void 0, ["add"].concat(args));
-};
-
-exports.add = add;
-
-var time = function time() {
-  for (var _len6 = arguments.length, args = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
-    args[_key6] = arguments[_key6];
-  }
-
-  return setup_init_call.apply(void 0, ["time"].concat(args));
-};
-
-exports.time = time;
-
-var speed = function speed() {
-  for (var _len7 = arguments.length, args = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
-    args[_key7] = arguments[_key7];
-  }
-
-  return setup_init_call.apply(void 0, ["speed"].concat(args));
-};
-
-exports.speed = speed;
-
-var fast = function fast() {
-  for (var _len8 = arguments.length, args = new Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
-    args[_key8] = arguments[_key8];
-  }
-
-  return setup_init_call.apply(void 0, ["fast"].concat(args));
-};
-
-exports.fast = fast;
-
-var mul = function mul() {
-  for (var _len9 = arguments.length, args = new Array(_len9), _key9 = 0; _key9 < _len9; _key9++) {
-    args[_key9] = arguments[_key9];
-  }
-
-  return setup_init_call.apply(void 0, ["mul"].concat(args));
-};
-
-exports.mul = mul;
-
-var mod = function mod() {
-  for (var _len10 = arguments.length, args = new Array(_len10), _key10 = 0; _key10 < _len10; _key10++) {
-    args[_key10] = arguments[_key10];
-  }
-
-  return setup_init_call.apply(void 0, ["mod"].concat(args));
-};
-
-exports.mod = mod;
-
-var div = function div() {
-  for (var _len11 = arguments.length, args = new Array(_len11), _key11 = 0; _key11 < _len11; _key11++) {
-    args[_key11] = arguments[_key11];
-  }
-
-  return setup_init_call.apply(void 0, ["div"].concat(args));
-};
-
-exports.div = div;
-
-var range = function range() {
-  for (var _len12 = arguments.length, args = new Array(_len12), _key12 = 0; _key12 < _len12; _key12++) {
-    args[_key12] = arguments[_key12];
-  }
-
-  return setup_init_call.apply(void 0, ["rang"].concat(args));
-};
-
-exports.range = range;
-
-var iter = function iter() {
-  for (var _len13 = arguments.length, args = new Array(_len13), _key13 = 0; _key13 < _len13; _key13++) {
-    args[_key13] = arguments[_key13];
-  }
-
-  return setup_init_call.apply(void 0, ["iter"].concat(args));
-};
-
-exports.iter = iter;
-
-var choose = function choose() {
-  for (var _len14 = arguments.length, args = new Array(_len14), _key14 = 0; _key14 < _len14; _key14++) {
-    args[_key14] = arguments[_key14];
-  }
-
-  return setup_init_call.apply(void 0, ["choose"].concat(args));
-};
-
-exports.choose = choose;
-
-var slew = function slew() {
-  for (var _len15 = arguments.length, args = new Array(_len15), _key15 = 0; _key15 < _len15; _key15++) {
-    args[_key15] = arguments[_key15];
-  }
-
-  return setup_init_call.apply(void 0, ["slew"].concat(args));
-};
-
-exports.slew = slew;
-
-var set = function set() {
-  for (var _len16 = arguments.length, args = new Array(_len16), _key16 = 0; _key16 < _len16; _key16++) {
-    args[_key16] = arguments[_key16];
-  }
-
-  return setup_init_call.apply(void 0, ["set"].concat(args));
-};
-
-exports.set = set;
-
-var rnd = function rnd() {
-  for (var _len17 = arguments.length, args = new Array(_len17), _key17 = 0; _key17 < _len17; _key17++) {
-    args[_key17] = arguments[_key17];
-  }
-
-  return setup_init_call.apply(void 0, ["rnd"].concat(args));
-};
-
-exports.rnd = rnd;
-
 var use = function use() {
-  for (var _len18 = arguments.length, args = new Array(_len18), _key18 = 0; _key18 < _len18; _key18++) {
-    args[_key18] = arguments[_key18];
+  for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+    args[_key4] = arguments[_key4];
   }
 
   return setup_init_call.apply(void 0, ["use"].concat(args));
@@ -870,8 +757,8 @@ var use = function use() {
 exports.use = use;
 
 var used = function used() {
-  for (var _len19 = arguments.length, args = new Array(_len19), _key19 = 0; _key19 < _len19; _key19++) {
-    args[_key19] = arguments[_key19];
+  for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+    args[_key5] = arguments[_key5];
   }
 
   return setup_init_call.apply(void 0, ["used"].concat(args));
@@ -880,8 +767,8 @@ var used = function used() {
 exports.used = used;
 
 var noop = function noop() {
-  for (var _len20 = arguments.length, args = new Array(_len20), _key20 = 0; _key20 < _len20; _key20++) {
-    args[_key20] = arguments[_key20];
+  for (var _len6 = arguments.length, args = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+    args[_key6] = arguments[_key6];
   }
 
   return setup_init_call.apply(void 0, ["noop"].concat(args));
@@ -890,14 +777,154 @@ var noop = function noop() {
 exports.noop = noop;
 
 var gen = function gen() {
-  for (var _len21 = arguments.length, args = new Array(_len21), _key21 = 0; _key21 < _len21; _key21++) {
-    args[_key21] = arguments[_key21];
+  for (var _len7 = arguments.length, args = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
+    args[_key7] = arguments[_key7];
   }
 
   return setup_init_call.apply(void 0, ["gen"].concat(args));
 };
 
 exports.gen = gen;
+
+var set = function set() {
+  for (var _len8 = arguments.length, args = new Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
+    args[_key8] = arguments[_key8];
+  }
+
+  return setup_init_call.apply(void 0, ["set"].concat(args));
+};
+
+exports.set = set;
+
+var rnd = function rnd() {
+  for (var _len9 = arguments.length, args = new Array(_len9), _key9 = 0; _key9 < _len9; _key9++) {
+    args[_key9] = arguments[_key9];
+  }
+
+  return setup_init_call.apply(void 0, ["rnd"].concat(args));
+};
+
+exports.rnd = rnd;
+
+var add = function add() {
+  for (var _len10 = arguments.length, args = new Array(_len10), _key10 = 0; _key10 < _len10; _key10++) {
+    args[_key10] = arguments[_key10];
+  }
+
+  return setup_init_call.apply(void 0, ["add"].concat(args));
+};
+
+exports.add = add;
+
+var mul = function mul() {
+  for (var _len11 = arguments.length, args = new Array(_len11), _key11 = 0; _key11 < _len11; _key11++) {
+    args[_key11] = arguments[_key11];
+  }
+
+  return setup_init_call.apply(void 0, ["mul"].concat(args));
+};
+
+exports.mul = mul;
+
+var mod = function mod() {
+  for (var _len12 = arguments.length, args = new Array(_len12), _key12 = 0; _key12 < _len12; _key12++) {
+    args[_key12] = arguments[_key12];
+  }
+
+  return setup_init_call.apply(void 0, ["mod"].concat(args));
+};
+
+exports.mod = mod;
+
+var div = function div() {
+  for (var _len13 = arguments.length, args = new Array(_len13), _key13 = 0; _key13 < _len13; _key13++) {
+    args[_key13] = arguments[_key13];
+  }
+
+  return setup_init_call.apply(void 0, ["div"].concat(args));
+};
+
+exports.div = div;
+
+var time = function time() {
+  for (var _len14 = arguments.length, args = new Array(_len14), _key14 = 0; _key14 < _len14; _key14++) {
+    args[_key14] = arguments[_key14];
+  }
+
+  return setup_init_call.apply(void 0, ["time"].concat(args));
+};
+
+exports.time = time;
+
+var speed = function speed() {
+  for (var _len15 = arguments.length, args = new Array(_len15), _key15 = 0; _key15 < _len15; _key15++) {
+    args[_key15] = arguments[_key15];
+  }
+
+  return setup_init_call.apply(void 0, ["speed"].concat(args));
+};
+
+exports.speed = speed;
+
+var fast = function fast() {
+  for (var _len16 = arguments.length, args = new Array(_len16), _key16 = 0; _key16 < _len16; _key16++) {
+    args[_key16] = arguments[_key16];
+  }
+
+  return setup_init_call.apply(void 0, ["fast"].concat(args));
+};
+
+exports.fast = fast;
+
+var slew = function slew() {
+  for (var _len17 = arguments.length, args = new Array(_len17), _key17 = 0; _key17 < _len17; _key17++) {
+    args[_key17] = arguments[_key17];
+  }
+
+  return setup_init_call.apply(void 0, ["slew"].concat(args));
+};
+
+exports.slew = slew;
+
+var sin = function sin() {
+  for (var _len18 = arguments.length, args = new Array(_len18), _key18 = 0; _key18 < _len18; _key18++) {
+    args[_key18] = arguments[_key18];
+  }
+
+  return setup_init_call.apply(void 0, ["sin"].concat(args));
+};
+
+exports.sin = sin;
+
+var range = function range() {
+  for (var _len19 = arguments.length, args = new Array(_len19), _key19 = 0; _key19 < _len19; _key19++) {
+    args[_key19] = arguments[_key19];
+  }
+
+  return setup_init_call.apply(void 0, ["range"].concat(args));
+};
+
+exports.range = range;
+
+var iter = function iter() {
+  for (var _len20 = arguments.length, args = new Array(_len20), _key20 = 0; _key20 < _len20; _key20++) {
+    args[_key20] = arguments[_key20];
+  }
+
+  return setup_init_call.apply(void 0, ["iter"].concat(args));
+};
+
+exports.iter = iter;
+
+var choose = function choose() {
+  for (var _len21 = arguments.length, args = new Array(_len21), _key21 = 0; _key21 < _len21; _key21++) {
+    args[_key21] = arguments[_key21];
+  }
+
+  return setup_init_call.apply(void 0, ["choose"].concat(args));
+};
+
+exports.choose = choose;
 
 },{}]},{},[1])(1)
 });

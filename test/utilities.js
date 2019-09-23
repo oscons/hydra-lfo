@@ -80,6 +80,16 @@ describe("Utilities ", function () {
             assert.equal(typeof xa.b, 'function');
             assert.equal(typeof xa.b(), 'undefined');
 
+            xa = L.expand_args({f: 1, s: 1, o: 0}, ud);
+
+            assert.equal(typeof xa, "object");
+            assert.equal(typeof xa.f, 'function');
+            assert.equal(typeof xa.s, 'function');
+            assert.equal(typeof xa.o, 'function');
+            assert.equal(xa.f(), 1);
+            assert.equal(xa.s(), 1);
+            assert.equal(xa.o(), 0);
+
             xa = L.expand_args({a: 1}, [2]);
 
             assert.equal(typeof xa, "object");
