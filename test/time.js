@@ -35,7 +35,14 @@ describe('Time functions', function () {
     describe('speed', function () {
         [
             ["should not scale the time value", [1, {}, 500, 500], [1, ud, 500, 500], [1, [], 500, 500]]
-            , ["should scale the time value", [1, {v: 2}, 500, 1000], [1, 4, 500, 2000], [1, {v: 0.5}, 500, 250]]
+            , ["should scale the time value"
+                , [1, {v: 2}, 500, 1000]
+                , [1, 4, 500, 2000]
+                , [1, {v: 0.5}, 500, 250]
+                , [0, {v: 1}, 500, 500]
+                , [ud, {v: 0.5}, 500, 250]
+                , [2, {v: 1, m: 0.5}, 500, 750]
+            ]
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
                 cases.forEach(([init, parms, time, expected], i) => {
@@ -44,7 +51,11 @@ describe('Time functions', function () {
                         cparms = [cparms];
                     }
                     
-                    const fn1 = L.set(init).speed(...cparms).time();
+                    let fn1 = L;
+                    if (typeof init !== 'undefined') {
+                        fn1 = fn1.set(init);
+                    }
+                    fn1 = fn1.speed(...cparms).time();
 
                     Array(10).fill(1).forEach((_, n) => {
                         const ret1 = fn1.run({time});

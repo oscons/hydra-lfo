@@ -25,6 +25,23 @@ describe('Overall', function () {
             }).run();
 
             assert.equal(my_state.foo, 'bar');
+
+            const state2 = {};
+            lfo2 = hydralfo.init(state2, false, false);
+
+            lfo2.map((input, gen_args) => {
+                gen_args.global_state.foo = 'baz';
+                return input;
+            }).run();
+
+            lfo0.map((input, gen_args) => {
+                gen_args.global_state.foo = 'alice';
+                return input;
+            }).run();
+
+            assert.equal(my_state.foo, 'alice');
+            assert.equal(state2.foo, 'baz');
+            
         });
     });
 
@@ -52,6 +69,21 @@ describe('Overall', function () {
         it("recognizes the canary", function () {
             assert.equal(L.set(1).set(L.set(10)).run(), 10);
             assert.equal(L.set(1).map((i) => i).run(), 1);
+        });
+        it("does not fudge parent chain parameters to much", function () {
+            const run_parms = [{time: 100, foo: "bar"}, "bar", [3, 2, 1], () => 1];
+            
+            assert.equal(
+                L.use("time").set(10)
+                    .add(L.use("time").mul(2).use().set(0))
+                    .run(...run_parms)
+                , 10
+            );
+
+            assert.deepEqual(run_parms[0], {time: 100, foo: "bar"});
+            assert.equal(run_parms[1], "bar");
+            assert.deepEqual(run_parms[2], [3, 2, 1]);
+            assert.equal(typeof run_parms[3], 'function');
         });
     });
 

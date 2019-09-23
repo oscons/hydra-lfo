@@ -1,10 +1,11 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.hydralfo = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+(function (global){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.choose = exports.iter = exports.range = exports.sin = exports.slew = exports.fast = exports.speed = exports.time = exports.div = exports.mod = exports.mul = exports.add = exports.rnd = exports.set = exports.gen = exports.noop = exports.used = exports.use = exports.start = exports.freeze_values = exports.get_time = exports.expand_args = exports.undefault = exports.mix_values = void 0;
+exports.init = void 0;
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -33,11 +34,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 // eslint-disable-next-line no-empty-function
 var ud = function () {}();
 
+var CANARY = "__hydralfo_func";
+
 var mix_values = function mix_values(a, b, m) {
   return m === 0 ? a : m === 1 ? b : a * (1 - m) + b * m;
 };
-
-exports.mix_values = mix_values;
 
 var undefault = function undefault(x, def) {
   if (typeof x === 'undefined') {
@@ -46,8 +47,6 @@ var undefault = function undefault(x, def) {
 
   return x;
 };
-
-exports.undefault = undefault;
 
 var expand_args = function expand_args(arg_def, args) {
   var vals = _objectSpread({}, undefault(arg_def, {}));
@@ -76,14 +75,33 @@ var expand_args = function expand_args(arg_def, args) {
     var ax = arg_def[x];
 
     if (typeof vx === 'function') {
-      vals[x] = function (call_args, call_gen_args) {
+      vals[x] = function (input, call_gen_args, call_args) {
         var nargs = call_args;
 
         if (typeof nargs === 'undefined') {
-          nargs = [];
+          nargs = [{}];
         }
 
-        return undefault(vx.apply(void 0, _toConsumableArray(nargs).concat([call_gen_args])), ax);
+        if (CANARY in vx) {
+          // make a 1 level copy of the call args for the call to the sub-chain
+          var new_call_args = [];
+          nargs.forEach(function (arg) {
+            if (_typeof(arg) === 'object') {
+              if (Array.isArray(arg)) {
+                new_call_args.push(_toConsumableArray(arg));
+              } else if ("call" in arg) {
+                new_call_args.push(arg);
+              } else {
+                new_call_args.push(_objectSpread({}, arg));
+              }
+            } else {
+              new_call_args.push(arg);
+            }
+          });
+          return undefault(vx.run(new_call_args), ax);
+        }
+
+        return undefault(vx(input, call_gen_args, nargs), ax);
       };
     } else if (typeof vx === 'undefined') {
       vals[x] = function () {
@@ -98,9 +116,7 @@ var expand_args = function expand_args(arg_def, args) {
   return vals;
 };
 
-exports.expand_args = expand_args;
-
-var get_time = function get_time(run_args, gen_args) {
+var get_time = function get_time(gen_args, run_args) {
   var allow_undef = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
   var time = ud;
   var namedargs = run_args;
@@ -139,8 +155,6 @@ var get_time = function get_time(run_args, gen_args) {
   return new Date().getTime() / 1000.0;
 };
 
-exports.get_time = get_time;
-
 var freeze_values = function freeze_values(v, args, gen_args) {
   if (typeof v === 'undefined') {
     return v;
@@ -159,7 +173,6 @@ var freeze_values = function freeze_values(v, args, gen_args) {
   return v;
 };
 
-exports.freeze_values = freeze_values;
 var _functions = {};
 
 _functions.add = function (args) {
@@ -168,9 +181,9 @@ _functions.add = function (args) {
   }, args),
       value = _expand_args.v;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var vv = freeze_values(value, run_args, gen_args);
-    return undefault(gen_args.input, 0) + vv;
+    return undefault(input, 0) + vv;
   };
 };
 
@@ -182,7 +195,7 @@ _functions.speed = function (args) {
       value = _expand_args2.v,
       mix = _expand_args2.m;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values = freeze_values([value, mix], run_args, gen_args),
         _freeze_values2 = _slicedToArray(_freeze_values, 2),
         vv = _freeze_values2[0],
@@ -192,18 +205,18 @@ _functions.speed = function (args) {
 
     if (typeof vv === 'undefined') {
       if (typeof input !== 'undefined') {
-        time_scale = gen_args.input;
+        time_scale = input;
       }
     } else if (typeof input === 'undefined') {
       time_scale = vv;
     } else if (typeof mv === 'undefined') {
       time_scale = vv;
     } else {
-      time_scale = mix_values(vv, gen_args.input, mv);
+      time_scale = mix_values(vv, input, mv);
     }
 
     gen_args.values.time = time_scale * gen_args.values.time;
-    return gen_args.input;
+    return input;
   };
 };
 
@@ -217,7 +230,7 @@ _functions.fast = function (args) {
       offset = _expand_args3.o,
       mix = _expand_args3.m;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values3 = freeze_values([scale, offset, mix], run_args, gen_args),
         _freeze_values4 = _slicedToArray(_freeze_values3, 3),
         sv = _freeze_values4[0],
@@ -231,13 +244,13 @@ _functions.fast = function (args) {
         time_scale = sv;
       }
     } else if (typeof sv === 'undefined') {
-      time_scale = gen_args.input;
+      time_scale = input;
     } else {
-      time_scale = mix_values(sv, gen_args.input, mv);
+      time_scale = mix_values(sv, input, mv);
     }
 
     gen_args.values.time = time_scale * gen_args.values.time + ov;
-    return gen_args.input;
+    return input;
   };
 };
 
@@ -249,19 +262,19 @@ _functions.time = function (args) {
       scale = _expand_args4.s,
       offset = _expand_args4.o;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values5 = freeze_values([scale, offset], run_args, gen_args),
         _freeze_values6 = _slicedToArray(_freeze_values5, 2),
         sv = _freeze_values6[0],
         ov = _freeze_values6[1];
 
-    return get_time(run_args, gen_args) * sv + ov;
+    return get_time(gen_args, run_args) * sv + ov;
   };
 };
 
 _functions.rnd = function (args) {
   var _expand_args5 = expand_args({
-    s: 1,
+    s: ud,
     o: 0,
     m: 0
   }, args),
@@ -269,7 +282,7 @@ _functions.rnd = function (args) {
       offset = _expand_args5.o,
       mix = _expand_args5.m;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values7 = freeze_values([scale, offset, mix], run_args, gen_args),
         _freeze_values8 = _slicedToArray(_freeze_values7, 3),
         sv = _freeze_values8[0],
@@ -283,9 +296,9 @@ _functions.rnd = function (args) {
         svx = sv;
       }
     } else if (typeof sv === 'undefined') {
-      svx = gen_args.input;
+      svx = input;
     } else {
-      svx = mix_values(svx, gen_args.input, mv);
+      svx = mix_values(svx, input, mv);
     }
 
     return Math.random() * svx + ov;
@@ -302,7 +315,7 @@ _functions.range = function (args) {
       lower = _expand_args6.l,
       step = _expand_args6.s;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values9 = freeze_values([step, upper, lower], run_args, gen_args),
         _freeze_values10 = _slicedToArray(_freeze_values9, 3),
         sv = _freeze_values10[0],
@@ -314,7 +327,7 @@ _functions.range = function (args) {
     if (gen_args.private_state.prev) {
       var _gen_args$private_sta = gen_args.private_state.prev.spi,
           spi = _gen_args$private_sta === void 0 ? 0 : _gen_args$private_sta;
-      npi = spi + sv + gen_args.input;
+      npi = spi + sv + input;
 
       if (npi >= uv) {
         npi = lv;
@@ -344,7 +357,7 @@ _functions.iter = function (args) {
       values = _expand_args7.v,
       step = _expand_args7.s;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values11 = freeze_values([values, step], run_args, gen_args),
         _freeze_values12 = _slicedToArray(_freeze_values11, 2),
         vv = _freeze_values12[0],
@@ -355,7 +368,7 @@ _functions.iter = function (args) {
         pi = _ref$pi === void 0 ? 0 : _ref$pi;
 
     if (gen_args.private_state.prev) {
-      pi = sv + pi + undefault(gen_args.input, 0);
+      pi = sv + pi + undefault(input, 0);
     }
 
     gen_args.private_state.prev = {
@@ -367,7 +380,7 @@ _functions.iter = function (args) {
     var val = vs[idx];
 
     if (typeof val === 'function') {
-      return val.apply(void 0, _toConsumableArray(run_args));
+      return val(input, gen_args, run_args);
     }
 
     return val;
@@ -382,7 +395,7 @@ _functions.choose = function (args) {
       values = _expand_args8.v,
       scale = _expand_args8.s;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values13 = freeze_values([values, scale], run_args, gen_args),
         _freeze_values14 = _slicedToArray(_freeze_values13, 2),
         vv = _freeze_values14[0],
@@ -392,7 +405,7 @@ _functions.choose = function (args) {
       return 0;
     }
 
-    var idx = undefault(gen_args.input, 0);
+    var idx = undefault(input, 0);
     idx = idx * sv;
     idx = Math.floor(Math.abs(idx));
     idx = idx % vv.length;
@@ -428,7 +441,7 @@ _functions.sin = function (args) {
       scale = _expand_args9.s,
       offset = _expand_args9.o;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values15 = freeze_values([frequency, scale, offset], run_args, gen_args),
         _freeze_values16 = _slicedToArray(_freeze_values15, 3),
         fv = _freeze_values16[0],
@@ -437,10 +450,10 @@ _functions.sin = function (args) {
 
     var time = 0;
 
-    if (typeof gen_args.input === 'undefined') {
-      time = get_time(run_args, gen_args);
+    if (typeof input === 'undefined') {
+      time = get_time(gen_args, run_args);
     } else {
-      time = gen_args.input;
+      time = input;
     }
 
     time = undefault(time, Math.PI);
@@ -454,10 +467,10 @@ _functions.floor = function (args) {
   }, args),
       digits = _expand_args10.d;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var dv = freeze_values(digits, run_args, gen_args);
     var fact = Math.pow(10, dv);
-    return Math.floor(gen_args.input * fact) / fact;
+    return Math.floor(input * fact) / fact;
   };
 };
 
@@ -467,7 +480,7 @@ _functions.set = function (args) {
   }, args),
       value = _expand_args11.v;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var vv = freeze_values(value, run_args, gen_args);
     return vv;
   };
@@ -479,9 +492,9 @@ _functions.mul = function (args) {
   }, args),
       value = _expand_args12.v;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var vv = freeze_values(value, run_args, gen_args);
-    return gen_args.input * vv;
+    return input * vv;
   };
 };
 
@@ -491,9 +504,9 @@ _functions.div = function (args) {
   }, args),
       value = _expand_args13.v;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var vv = freeze_values(value, run_args, gen_args);
-    var definput = undefault(gen_args.input, 0);
+    var definput = undefault(input, 0);
 
     if (vv === 0) {
       return definput / 0.0000000000001;
@@ -509,14 +522,14 @@ _functions.mod = function (args) {
   }, args),
       value = _expand_args14.v;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var vv = freeze_values(value, run_args, gen_args);
 
     if (vv === 0) {
       return 0;
     }
 
-    return undefault(gen_args.input, 0) % vv;
+    return undefault(input, 0) % vv;
   };
 };
 
@@ -528,17 +541,17 @@ _functions.slew = function (args) {
       rate = _expand_args15.r,
       max = _expand_args15.x;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values17 = freeze_values([rate, max], run_args, gen_args),
         _freeze_values18 = _slicedToArray(_freeze_values17, 2),
         rv = _freeze_values18[0],
         xv = _freeze_values18[1];
 
     if (!gen_args.private_state.prev) {
-      gen_args.private_state.prev = gen_args.input;
+      gen_args.private_state.prev = input;
     }
 
-    var genin = gen_args.input;
+    var genin = input;
 
     if (typeof genin === 'undefined') {
       genin = gen_args.private_state.prev;
@@ -572,8 +585,8 @@ _functions.map = function (args) {
   }, args),
       func = _expand_args16.f;
 
-  return function (run_args, gen_args) {
-    return func.apply(void 0, _toConsumableArray(run_args).concat([gen_args]));
+  return function (value, gen_args, run_args) {
+    return func.apply(void 0, [value, gen_args].concat(_toConsumableArray(run_args)));
   };
 };
 
@@ -585,7 +598,7 @@ _functions.beats = function (args) {
       scale = _expand_args17.s,
       sbpm = _expand_args17.b;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values19 = freeze_values([scale, sbpm], run_args, gen_args),
         _freeze_values20 = _slicedToArray(_freeze_values19, 2),
         sv = _freeze_values20[0],
@@ -600,7 +613,7 @@ _functions.beats = function (args) {
     }
 
     gen_args.values.time = undefault(time, 0) / 60 * abpm * sv;
-    return gen_args.input;
+    return input;
   };
 };
 
@@ -612,7 +625,7 @@ _functions.use = function (args) {
       name = _expand_args18.n,
       copy = _expand_args18.c;
 
-  return function (run_args, gen_args) {
+  return function (input, gen_args, run_args) {
     var _freeze_values21 = freeze_values([name, copy], run_args, gen_args),
         _freeze_values22 = _slicedToArray(_freeze_values21, 2),
         nv = _freeze_values22[0],
@@ -621,7 +634,7 @@ _functions.use = function (args) {
     var ret = gen_args.values[nv];
 
     if (cv) {
-      ret = gen_args.input;
+      ret = input;
     }
 
     gen_args.current_value = nv;
@@ -630,8 +643,8 @@ _functions.use = function (args) {
 };
 
 _functions.noop = function () {
-  return function (_, gen_args) {
-    return gen_args.input;
+  return function (input) {
+    return input;
   };
 };
 
@@ -675,7 +688,7 @@ var run_calls = function run_calls(global_state, instance_state, calls, args) {
 
     gen_args.private_state = private_state;
     gen_args.input = gen_args.values[gen_args.current_value];
-    var res = fncall(run_args, gen_args);
+    var res = fncall(gen_args.input, gen_args, run_args);
     gen_args.values[gen_args.current_value] = res;
   });
   var rval = gen_args.values[gen_args.current_value];
@@ -706,10 +719,15 @@ var sub_call = function sub_call(global_state, prev_calls, fun) {
   };
 
   rfun.run = rfun;
+  rfun[CANARY] = true;
   Object.entries(_functions).forEach(function (_ref4) {
     var _ref5 = _slicedToArray(_ref4, 2),
         name = _ref5[0],
         gen = _ref5[1];
+
+    if (name in rfun && !(name in Object.getOwnPropertyNames())) {
+      throw new Error("".concat(name, " already exists on parents of rfun"));
+    }
 
     rfun[name] = function () {
       for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
@@ -727,204 +745,69 @@ var sub_call = function sub_call(global_state, prev_calls, fun) {
   return rfun;
 };
 
-var start = function start() {
-  var global_state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  return sub_call(global_state, []);
-};
-
-exports.start = start;
-
-var setup_init_call = function setup_init_call(fun) {
-  var _start;
-
-  for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-    args[_key3 - 1] = arguments[_key3];
+var get_global_env = function get_global_env() {
+  if (typeof window !== 'undefined') {
+    return window;
   }
 
-  return (_start = start())[fun].apply(_start, args);
+  return global;
 };
-/* eslint-disable no-multi-spaces */
 
+var make_new_lfo = function make_new_lfo(state) {
+  var fdef = {};
+  var global_state = typeof state === 'undefined' ? {} : state;
+  Object.keys(_functions).forEach(function (name) {
+    fdef[name] = function () {
+      var _sub_call;
 
-var use = function use() {
-  for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-    args[_key4] = arguments[_key4];
+      return (_sub_call = sub_call(global_state, []))[name].apply(_sub_call, arguments);
+    };
+  });
+
+  fdef.__release = function (new_lfo) {// for future use, e.g. to stop timeouts etc
+  };
+
+  return fdef;
+};
+
+var GLOBAL_INIT_ID = "__hydralfo_global";
+
+var init = function init() {
+  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : ud;
+  var init_global = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+  var force = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+  var new_lfo = make_new_lfo(state);
+
+  if (!init_global) {
+    return new_lfo;
   }
 
-  return setup_init_call.apply(void 0, ["use"].concat(args));
-};
+  var env = get_global_env();
 
-exports.use = use;
+  if (typeof env !== 'undefined') {
+    if (CANARY in env) {
+      var old_lfo = env[CANARY];
 
-var used = function used() {
-  for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-    args[_key5] = arguments[_key5];
+      if (_typeof(old_lfo) === 'object') {
+        if (!force) {
+          return env[CANARY];
+        }
+
+        if ('__release' in old_lfo) {
+          old_lfo.__release(new_lfo);
+        }
+      }
+    }
+
+    env[CANARY] = new_lfo;
   }
 
-  return setup_init_call.apply(void 0, ["used"].concat(args));
+  return new_lfo;
 };
 
-exports.used = used;
+exports.init = init;
 
-var noop = function noop() {
-  for (var _len6 = arguments.length, args = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
-    args[_key6] = arguments[_key6];
-  }
-
-  return setup_init_call.apply(void 0, ["noop"].concat(args));
-};
-
-exports.noop = noop;
-
-var gen = function gen() {
-  for (var _len7 = arguments.length, args = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
-    args[_key7] = arguments[_key7];
-  }
-
-  return setup_init_call.apply(void 0, ["gen"].concat(args));
-};
-
-exports.gen = gen;
-
-var set = function set() {
-  for (var _len8 = arguments.length, args = new Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
-    args[_key8] = arguments[_key8];
-  }
-
-  return setup_init_call.apply(void 0, ["set"].concat(args));
-};
-
-exports.set = set;
-
-var rnd = function rnd() {
-  for (var _len9 = arguments.length, args = new Array(_len9), _key9 = 0; _key9 < _len9; _key9++) {
-    args[_key9] = arguments[_key9];
-  }
-
-  return setup_init_call.apply(void 0, ["rnd"].concat(args));
-};
-
-exports.rnd = rnd;
-
-var add = function add() {
-  for (var _len10 = arguments.length, args = new Array(_len10), _key10 = 0; _key10 < _len10; _key10++) {
-    args[_key10] = arguments[_key10];
-  }
-
-  return setup_init_call.apply(void 0, ["add"].concat(args));
-};
-
-exports.add = add;
-
-var mul = function mul() {
-  for (var _len11 = arguments.length, args = new Array(_len11), _key11 = 0; _key11 < _len11; _key11++) {
-    args[_key11] = arguments[_key11];
-  }
-
-  return setup_init_call.apply(void 0, ["mul"].concat(args));
-};
-
-exports.mul = mul;
-
-var mod = function mod() {
-  for (var _len12 = arguments.length, args = new Array(_len12), _key12 = 0; _key12 < _len12; _key12++) {
-    args[_key12] = arguments[_key12];
-  }
-
-  return setup_init_call.apply(void 0, ["mod"].concat(args));
-};
-
-exports.mod = mod;
-
-var div = function div() {
-  for (var _len13 = arguments.length, args = new Array(_len13), _key13 = 0; _key13 < _len13; _key13++) {
-    args[_key13] = arguments[_key13];
-  }
-
-  return setup_init_call.apply(void 0, ["div"].concat(args));
-};
-
-exports.div = div;
-
-var time = function time() {
-  for (var _len14 = arguments.length, args = new Array(_len14), _key14 = 0; _key14 < _len14; _key14++) {
-    args[_key14] = arguments[_key14];
-  }
-
-  return setup_init_call.apply(void 0, ["time"].concat(args));
-};
-
-exports.time = time;
-
-var speed = function speed() {
-  for (var _len15 = arguments.length, args = new Array(_len15), _key15 = 0; _key15 < _len15; _key15++) {
-    args[_key15] = arguments[_key15];
-  }
-
-  return setup_init_call.apply(void 0, ["speed"].concat(args));
-};
-
-exports.speed = speed;
-
-var fast = function fast() {
-  for (var _len16 = arguments.length, args = new Array(_len16), _key16 = 0; _key16 < _len16; _key16++) {
-    args[_key16] = arguments[_key16];
-  }
-
-  return setup_init_call.apply(void 0, ["fast"].concat(args));
-};
-
-exports.fast = fast;
-
-var slew = function slew() {
-  for (var _len17 = arguments.length, args = new Array(_len17), _key17 = 0; _key17 < _len17; _key17++) {
-    args[_key17] = arguments[_key17];
-  }
-
-  return setup_init_call.apply(void 0, ["slew"].concat(args));
-};
-
-exports.slew = slew;
-
-var sin = function sin() {
-  for (var _len18 = arguments.length, args = new Array(_len18), _key18 = 0; _key18 < _len18; _key18++) {
-    args[_key18] = arguments[_key18];
-  }
-
-  return setup_init_call.apply(void 0, ["sin"].concat(args));
-};
-
-exports.sin = sin;
-
-var range = function range() {
-  for (var _len19 = arguments.length, args = new Array(_len19), _key19 = 0; _key19 < _len19; _key19++) {
-    args[_key19] = arguments[_key19];
-  }
-
-  return setup_init_call.apply(void 0, ["range"].concat(args));
-};
-
-exports.range = range;
-
-var iter = function iter() {
-  for (var _len20 = arguments.length, args = new Array(_len20), _key20 = 0; _key20 < _len20; _key20++) {
-    args[_key20] = arguments[_key20];
-  }
-
-  return setup_init_call.apply(void 0, ["iter"].concat(args));
-};
-
-exports.iter = iter;
-
-var choose = function choose() {
-  for (var _len21 = arguments.length, args = new Array(_len21), _key21 = 0; _key21 < _len21; _key21++) {
-    args[_key21] = arguments[_key21];
-  }
-
-  return setup_init_call.apply(void 0, ["choose"].concat(args));
-};
-
-exports.choose = choose;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}]},{},[1])(1)
 });

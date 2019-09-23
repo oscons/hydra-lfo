@@ -92,5 +92,26 @@ describe('Math functions', function () {
             });
         });
     });
-
+    describe('floot', function () {
+        it('rounds down to specified precision', function () {
+            [
+                [5.55555, [], 5]
+                , [5.55555, [ud], 5]
+                , [5.55555, [{}], 5]
+                , [5.55555, [0], 5]
+                , [5.55555, [{d: 0}], 5]
+                , [5.55555, [1], 5.5]
+                , [5.55555, [{d: 1}], 5.5]
+                , [5.55555, [2], 5.55]
+                , [5.55555, [{d: 2}], 5.55]
+                , [5.55555, [3], 5.555]
+                , [5.55555, [{d: 3}], 5.555]
+                , [ud, [], 0]
+                , [ud, [ud], 0]
+                , [ud, [{d: 3}], 0]
+            ].forEach(([init, parms, result], i) => {
+                assert.equal(L.set(init).floor(...parms).run(), result, `case ${i + 1}`);
+            });
+        });
+    });
 });

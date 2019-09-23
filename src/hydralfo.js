@@ -40,13 +40,30 @@ const expand_args = (arg_def, args) => {
             vals[x] = (input, call_gen_args, call_args) => {
                 let nargs = call_args;
                 if (typeof nargs === 'undefined') {
-                    nargs = [];
+                    nargs = [{}];
                 }
                 if (CANARY in vx) {
-                    return undefault(vx.run(call_args), ax);
+                    // make a 1 level copy of the call args for the call to the sub-chain
+                    const new_call_args = [];
+
+                    nargs.forEach((arg) => {
+                        if (typeof arg === 'object') {
+                            if (Array.isArray(arg)) {
+                                new_call_args.push([...arg]);
+                            } else if ("call" in arg) {
+                                new_call_args.push(arg);
+                            } else {
+                                new_call_args.push({...arg});
+                            }
+                        } else {
+                            new_call_args.push(arg);
+                        }
+                    });
+
+                    return undefault(vx.run(new_call_args), ax);
                 }
 
-                return undefault(vx(input, call_gen_args, call_args), ax);
+                return undefault(vx(input, call_gen_args, nargs), ax);
             };
         } else if (typeof vx === 'undefined') {
             vals[x] = () => ax;
@@ -170,7 +187,7 @@ _functions.time = (args) => {
 };
 
 _functions.rnd = (args) => {
-    const {s: scale, o: offset, m: mix} = expand_args({s: 1, o: 0, m: 0}, args);
+    const {s: scale, o: offset, m: mix} = expand_args({s: ud, o: 0, m: 0}, args);
 
     return (input, gen_args, run_args) => {
         const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
@@ -401,7 +418,6 @@ _functions.map = (args) => {
     const {f: func} = expand_args({f: (x) => x}, args);
 
     return (value, gen_args, run_args) => {
-        console.log({run_args, gen_args});
         return func(value, gen_args, ...run_args);
     };
 };

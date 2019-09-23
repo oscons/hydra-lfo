@@ -60,56 +60,37 @@ describe('General functions', function () {
             });
         });
     });
+    describe('noop', function () {
+        it("should not modify anything", function () {
+            assert.equal(L.set(10).noop().run(), 10);
+            assert.equal(L.set(10).noop(ud).run(), 10);
+            assert.equal(L.set(10).noop({}).run(), 10);
+            assert.equal(L.set(10).noop({v: 100}).run(), 10);
+            assert.equal(L.set(10).noop({time: 100}).run(), 10);
 
-    describe('rnd', function () {
-        [
-            [ud, ud, 0, 1]
-            , [ud, 2, 0, 2]
-            , [ud, {s: 2, o: 1}, 1, 3]
-            , [2, ud, 0, 1]
-            , [2, 4, 0, 4]
-            , [2, {s: 4, o: 1, m: 0.5}, 1, 4]
-        ].forEach(function ([set, parms, lower, upper]) {
-            it(`should return random values in the correct range [${lower},${upper})`, function () {
-                let ret = 0;
-                
-                let fn = L.rnd(parms);
-                if (typeof set !== 'undefined') {
-                    fn = L.set(set).rnd(parms);
-                }
-                
-                ret = Array(1000).fill(1).map(() => fn.run());
-                ret.forEach((x) => {
-                    assert.equal(typeof x, "number", `Not a number: ${x}`);
-                });
-                ret = ret.reduce((prev, curr) => {
-                    prev.cnt++;
+            assert.equal(L.set(10).noop().run({time: 200}), 10);
+            assert.equal(L.set(10).noop(ud).run({time: 200}), 10);
+            assert.equal(L.set(10).noop({}).run({time: 200}), 10);
+            assert.equal(L.set(10).noop({v: 100}).run({time: 200}), 10);
+            assert.equal(L.set(10).noop({time: 100}).run({time: 200}), 10);
 
-                    prev.min = Math.min(prev.min, curr);
-                    prev.max = Math.min(prev.max, curr);
-
-                    try {
-                        prev.agg[`v${curr}`]++;
-                    } catch (e) {
-                        prev.agg[`v${curr}`] = 1;
-                    }
-
-                    return prev;
-                }, {
-                    min: Number.MAX_SAFE_INTEGER
-                    , max: Number.MIN_SAFE_INTEGER
-                    , cnt: 0
-                    , agg: {v0: lower, v1: upper}
-                });
-
-                assert.equal(
-                    ret.min >= lower && ret.max < upper
-                    , true
-                    , `Min/max out of range: min=${ret.min} max=${ret.max}`
-                );
-                assert.equal(ret.agg.v0 < ret.cnt * 0.1, true);
-
-            });
         });
     });
+    describe('gen', function () {
+        it("should not modify anything", function () {
+            assert.equal(L.set(10).gen().run(), 10);
+            assert.equal(L.set(10).gen(ud).run(), 10);
+            assert.equal(L.set(10).gen({}).run(), 10);
+            assert.equal(L.set(10).gen({v: 100}).run(), 10);
+            assert.equal(L.set(10).gen({time: 100}).run(), 10);
+
+            assert.equal(L.set(10).gen().run({time: 200}), 10);
+            assert.equal(L.set(10).gen(ud).run({time: 200}), 10);
+            assert.equal(L.set(10).gen({}).run({time: 200}), 10);
+            assert.equal(L.set(10).gen({v: 100}).run({time: 200}), 10);
+            assert.equal(L.set(10).gen({time: 100}).run({time: 200}), 10);
+
+        });
+    });
+
 });
