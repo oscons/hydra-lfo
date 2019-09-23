@@ -207,6 +207,8 @@ _functions.rnd = (args) => {
     };
 };
 
+_functions.rand = _functions.rnd;
+
 _functions.range = (args) => {
     const {u: upper, l: lower, s: step} = expand_args({u: 10, l: 0, s: 1}, args);
 
@@ -376,6 +378,29 @@ _functions.mod = (args) => {
             return 0;
         }
         return undefault(input, 0) % vv;
+    };
+};
+
+_functions.sah = (args) => {
+    const {h: hold_time} = expand_args({h: 1}, args);
+
+    return (input, gen_args, run_args) => {
+        const [hv] = freeze_values([hold_time], run_args, gen_args);
+
+        let prev_time = 0;
+        if (typeof gen_args.private_state.time !== 'undefined') {
+            prev_time = gen_args.private_state.time;
+        }
+        if (typeof gen_args.private_state.value === 'undefined') {
+            gen_args.private_state.value = input;
+        }
+
+        if ((gen_args.values.time - prev_time) >= hv) {
+            gen_args.private_state.value = input;
+            gen_args.private_state.time = gen_args.values.time;
+        }
+        
+        return gen_args.private_state.value;
     };
 };
 

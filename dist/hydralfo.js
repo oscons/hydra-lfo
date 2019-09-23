@@ -305,6 +305,8 @@ _functions.rnd = function (args) {
   };
 };
 
+_functions.rand = _functions.rnd;
+
 _functions.range = function (args) {
   var _expand_args6 = expand_args({
     u: 10,
@@ -533,19 +535,49 @@ _functions.mod = function (args) {
   };
 };
 
-_functions.slew = function (args) {
+_functions.sah = function (args) {
   var _expand_args15 = expand_args({
+    h: 1
+  }, args),
+      hold_time = _expand_args15.h;
+
+  return function (input, gen_args, run_args) {
+    var _freeze_values17 = freeze_values([hold_time], run_args, gen_args),
+        _freeze_values18 = _slicedToArray(_freeze_values17, 1),
+        hv = _freeze_values18[0];
+
+    var prev_time = 0;
+
+    if (typeof gen_args.private_state.time !== 'undefined') {
+      prev_time = gen_args.private_state.time;
+    }
+
+    if (typeof gen_args.private_state.value === 'undefined') {
+      gen_args.private_state.value = input;
+    }
+
+    if (gen_args.values.time - prev_time >= hv) {
+      gen_args.private_state.value = input;
+      gen_args.private_state.time = gen_args.values.time;
+    }
+
+    return gen_args.private_state.value;
+  };
+};
+
+_functions.slew = function (args) {
+  var _expand_args16 = expand_args({
     r: 1,
     x: Number.MAX_VALUE
   }, args),
-      rate = _expand_args15.r,
-      max = _expand_args15.x;
+      rate = _expand_args16.r,
+      max = _expand_args16.x;
 
   return function (input, gen_args, run_args) {
-    var _freeze_values17 = freeze_values([rate, max], run_args, gen_args),
-        _freeze_values18 = _slicedToArray(_freeze_values17, 2),
-        rv = _freeze_values18[0],
-        xv = _freeze_values18[1];
+    var _freeze_values19 = freeze_values([rate, max], run_args, gen_args),
+        _freeze_values20 = _slicedToArray(_freeze_values19, 2),
+        rv = _freeze_values20[0],
+        xv = _freeze_values20[1];
 
     if (!gen_args.private_state.prev) {
       gen_args.private_state.prev = input;
@@ -578,12 +610,12 @@ _functions.slew = function (args) {
 };
 
 _functions.map = function (args) {
-  var _expand_args16 = expand_args({
+  var _expand_args17 = expand_args({
     f: function f(x) {
       return x;
     }
   }, args),
-      func = _expand_args16.f;
+      func = _expand_args17.f;
 
   return function (value, gen_args, run_args) {
     return func.apply(void 0, [value, gen_args].concat(_toConsumableArray(run_args)));
@@ -591,18 +623,18 @@ _functions.map = function (args) {
 };
 
 _functions.beats = function (args) {
-  var _expand_args17 = expand_args({
+  var _expand_args18 = expand_args({
     s: 1,
     b: ud
   }, args),
-      scale = _expand_args17.s,
-      sbpm = _expand_args17.b;
+      scale = _expand_args18.s,
+      sbpm = _expand_args18.b;
 
   return function (input, gen_args, run_args) {
-    var _freeze_values19 = freeze_values([scale, sbpm], run_args, gen_args),
-        _freeze_values20 = _slicedToArray(_freeze_values19, 2),
-        sv = _freeze_values20[0],
-        bv = _freeze_values20[1];
+    var _freeze_values21 = freeze_values([scale, sbpm], run_args, gen_args),
+        _freeze_values22 = _slicedToArray(_freeze_values21, 2),
+        sv = _freeze_values22[0],
+        bv = _freeze_values22[1];
 
     var time = run_args.time,
         bpm = run_args.bpm;
@@ -618,18 +650,18 @@ _functions.beats = function (args) {
 };
 
 _functions.use = function (args) {
-  var _expand_args18 = expand_args({
+  var _expand_args19 = expand_args({
     n: "val",
     c: false
   }, args),
-      name = _expand_args18.n,
-      copy = _expand_args18.c;
+      name = _expand_args19.n,
+      copy = _expand_args19.c;
 
   return function (input, gen_args, run_args) {
-    var _freeze_values21 = freeze_values([name, copy], run_args, gen_args),
-        _freeze_values22 = _slicedToArray(_freeze_values21, 2),
-        nv = _freeze_values22[0],
-        cv = _freeze_values22[1];
+    var _freeze_values23 = freeze_values([name, copy], run_args, gen_args),
+        _freeze_values24 = _slicedToArray(_freeze_values23, 2),
+        nv = _freeze_values24[0],
+        cv = _freeze_values24[1];
 
     var ret = gen_args.values[nv];
 
