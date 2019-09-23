@@ -1,0 +1,63 @@
+{
+  "name": "hydra-lfo",
+  "version": "0.1.0",
+  "description": "Control utility library for Hydra visualization",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oscons/hydra-lfo"
+  },
+  "scripts": {
+    "dist": "npm run rebuild && copyfiles -u 1 build/hydralfo* dist/",
+    "rebuild": "npm run clean && npm run build",
+    "build": "npm run build_normal && npm run build_mini",
+    "build_normal": "browserify --standalone 'hydralfo' --debug -t babelify src/*.js | exorcist build/hydralfo.js.map > build/hydralfo.js",
+    "build_mini": "browserify --standalone 'hydralfo' --debug -t [ babelify --envName 'build:mini' ] src/*.js | exorcist build/hydralfo.min.js.map > build/hydralfo.min.js",
+    "clean": "rimraf dist/*.js build/*",
+    "coverage": "cross-env NODE_ENV=test nyc mocha",
+    "test": "mocha"
+  },
+  "author": "oscons",
+  "license": "GPL-2.0-or-later",
+  "nyc": {
+    "extends": "@istanbuljs/nyc-config-babel",
+    "require": [
+      "@babel/register"
+    ],
+    "include": [
+      "src/hydralfo.js"
+    ],
+    "reporter": [
+      "text",
+      "html"
+    ],
+    "sourceMap": false,
+    "instrument": false
+  },
+  "files": [
+    "dist/hydralfo.js",
+    "dist/hydralfo.js.map",
+    "dist/hydralfo.min.js",
+    "dist/hydralfo.min.js.map"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.6.0",
+    "@babel/preset-env": "^7.6.0",
+    "@babel/register": "^7.6.0",
+    "@istanbuljs/nyc-config-babel": "^2.1.1",
+    "@types/assert": "^1.4.3",
+    "babel-plugin-istanbul": "^5.2.0",
+    "babel-preset-minify": "^0.5.1",
+    "babelify": "^10.0.0",
+    "browserify": "^16.5.0",
+    "copyfiles": "^2.1.1",
+    "crossenv": "0.0.2-security",
+    "eslint": "^6.4.0",
+    "exorcist": "^1.0.1",
+    "mocha": "^6.2.0",
+    "nyc": "^14.1.1",
+    "rimraf": "^3.0.0",
+    "tinyify": "^2.5.1",
+    "watchify": "^3.11.1"
+  }
+}
