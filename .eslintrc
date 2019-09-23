@@ -1,0 +1,87 @@
+
+{
+    "parserOptions": {
+        "ecmaVersion": 2018
+        , "sourceType": "module"
+    }
+    , "extends": [
+        "eslint:recommended"
+        , "eslint:all"
+    ]
+    , "overrides": [{
+        "files": ["test/**/*.js"]
+        , "parserOptions": {
+            "sourceType": "script"
+        }
+        , "rules": {
+            "no-unused-vars": "warn"
+        }
+    }]
+    , "rules": {
+        "comma-style": ["warn", "first"]
+        , "one-var": "off"
+        , "no-trailing-spaces": ["error", {"skipBlankLines": true}]
+        , "max-lines-per-function": [
+            "warn"
+            , {
+                "max": 200
+                , "skipBlankLines": true
+                , "skipComments": true
+                , "IIFEs": false
+            }
+        ]
+        , "strict": ["error", "global"]
+        , "quote-props": ["error", "as-needed"]
+        , "max-len": [
+            "error"
+            , {
+                "code": 120
+                , "ignoreComments": true
+                , "ignoreUrls": true
+            }
+        ]
+        , "indent": [
+            "error"
+            , 4
+            , {
+                "SwitchCase": 1
+            }
+        ]
+        , "consistent-this": [ "error", "that"]
+
+        , "no-nested-ternary": "off"
+        , "newline-per-chained-call": "off"
+        , "max-params": "off"
+        , "max-lines": "off"
+        , "no-lone-blocks": "off"
+        , "array-bracket-newline": "off"
+        , "dot-location": "off"
+        , "prefer-arrow-callback": "off"
+        , "operator-linebreak": "off"
+        , "operator-assignment": "off"
+        , "camelcase": ["off"]
+        , "max-statements": "off"
+        , "id-length": "off"
+        , "no-magic-numbers": "off"
+        , "padded-blocks": "off"
+        , "quotes": "off"
+        , "no-plusplus": "off"
+        , "function-call-argument-newline": "off"
+        , "no-continue": "off"
+        , "no-underscore-dangle": "off"
+        , "func-names": "off"
+        , "no-console": "off"
+        , "sort-keys": "off"
+        , "object-property-newline": "off"
+        , "no-extra-parens": "off"
+        , "sort-vars": "off"
+        , "array-element-newline": "off"
+        , "multiline-ternary": "off"
+        , "no-ternary": "off"
+        , "capitalized-comments": "off"
+    }
+    , "env": {
+        "browser":true
+        , "commonjs": true
+    }
+}

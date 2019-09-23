@@ -11,41 +11,38 @@ export const undefault = (x, def) => {
     return x;
 };
 
-export const expand_args = (adef, rest) => {
-    const vals = {...adef};
+export const expand_args = (arg_def, args) => {
+    const vals = {...undefault(arg_def, {})};
 
-    if (typeof rest !== 'undefined' && rest.length > 0) {
-        if (rest.length === 1 && typeof rest[0] === 'object' && !Array.isArray(rest[0])) {
-            const [first] = rest;
-            for (const x in adef) {
+    if (typeof args !== 'undefined' && args.length > 0) {
+        const [first] = args;
+        if (typeof first === 'object' && !Array.isArray(first)) {
+            for (const x in arg_def) {
                 if (x in first) {
                     vals[x] = first[x];
                 }
             }
         } else {
-            let ok = Object.keys(adef);
-            ok = ok.slice(0, Math.min(ok.length, rest.length));
-            for (let i = 0; i < ok.length; i++) {
-                vals[ok[i]] = rest[i];
-            }
+            let defkeys = Object.keys(arg_def);
+            defkeys = defkeys.slice(0, Math.min(defkeys.length, args.length));
+            defkeys.forEach((k, i) => {
+                vals[k] = args[i];
+            });
         }
     }
 
     Object.keys(vals).forEach((x) => {
         const vx = vals[x];
-        const ax = adef[x];
-        if (typeof vals[x] === 'function') {
-            if (typeof vx._private_state === 'undefined') {
-                vals[x] = (...args) => {
-                    const rv = vx(...args);
-                    if (typeof rv === 'undefined') {
-                        return ax;
-                    }
-                    return rv;
-                };
-            } else {
-                vals[x] = vx.g();
-            }
+        const ax = arg_def[x];
+
+        if (typeof vx === 'function') {
+            vals[x] = (call_args, call_gen_args) => {
+                let nargs = call_args;
+                if (typeof nargs === 'undefined') {
+                    nargs = [];
+                }
+                return undefault(vx(...nargs, call_gen_args), ax);
+            };
         } else if (typeof vx === 'undefined') {
             vals[x] = () => ax;
         } else {
@@ -63,7 +60,7 @@ export const get_time = (args) => {
         time = atime;
     }
 
-    if (time) {
+    if (typeof time !== 'undefined') {
         return time;
     }
     if (typeof window !== 'undefined' && typeof window.time !== 'undefined') {
@@ -87,7 +84,7 @@ export const freeze_values = (v, args, gen_args) => {
 
 const _functions = {};
 
-_functions.add = (that, args) => {
+_functions.add = (args) => {
     const {v: value} = expand_args({v: 0}, args);
 
     return (run_args, gen_args) => {
@@ -96,50 +93,54 @@ _functions.add = (that, args) => {
     };
 };
 
-_functions.speed = (that, args) => {
+_functions.speed = (args) => {
     const {v: value, m: mix} = expand_args({v: ud, m: ud}, args);
 
     return (run_args, gen_args) => {
         const [vv, mv] = freeze_values([value, mix], run_args, gen_args);
         
+        let time_scale = 1;
         if (typeof vv === 'undefined') {
             if (typeof input !== 'undefined') {
-                gen_args.run_state.time_scale = input;
+                time_scale = gen_args.input;
             }
         } else if (typeof input === 'undefined') {
-            gen_args.run_state.time_scale = vv;
+            time_scale = vv;
         } else if (typeof mv === 'undefined') {
-            gen_args.run_state.time_scale = vv;
+            time_scale = vv;
         } else {
-            gen_args.run_state.time_scale = mix_values(vv, gen_args.input, mv);
+            time_scale = mix_values(vv, gen_args.input, mv);
         }
+
+        gen_args.values.time = time_scale * gen_args.values.time;
 
         return gen_args.input;
     };
 };
 
-_functions.fast = (that, args) => {
+_functions.fast = (args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: ud, o: 0, m: 0}, args);
     return (run_args, gen_args) => {
         const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
         
+        let time_scale = 1;
         if (typeof input === 'undefined') {
             if (typeof sv !== 'undefined') {
-                gen_args.run_state.time_scale = gen_args.run_state.time_scale * sv;
+                time_scale = sv;
             }
         } else if (typeof sv === 'undefined') {
-            gen_args.run_state.time_scale = gen_args.run_state.time_scale * input;
+            time_scale = gen_args.input;
         } else {
-            gen_args.run_state.time_scale = gen_args.run_state.time_scale * mix_values(sv, input, mv);
+            time_scale = mix_values(sv, gen_args.input, mv);
         }
 
-        gen_args.run_state.time_scale = gen_args.run_state.time_scale + ov;
+        gen_args.values.time = (time_scale * gen_args.values.time) + ov;
         
-        return input;
+        return gen_args.input;
     };
 };
 
-_functions.time = (that, args) => {
+_functions.time = (args) => {
     const {s: scale, o: offset} = expand_args({s: 1, o: 0}, args);
 
     return (run_args, gen_args) => {
@@ -149,7 +150,7 @@ _functions.time = (that, args) => {
     };
 };
 
-_functions.rnd = (that, args) => {
+_functions.rnd = (args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: 1, o: 0, m: 0}, args);
 
     return (run_args, gen_args) => {
@@ -161,16 +162,16 @@ _functions.rnd = (that, args) => {
                 svx = sv;
             }
         } else if (typeof sv === 'undefined') {
-            svx = input;
+            svx = gen_args.input;
         } else {
-            svx = mix_values(svx, input, mv);
+            svx = mix_values(svx, gen_args.input, mv);
         }
 
         return (Math.random() * svx) + ov;
     };
 };
 
-_functions.range = (that, args) => {
+_functions.range = (args) => {
     const {u: upper, l: lower, s: step} = expand_args({u: 10, l: 0, s: 1}, args);
 
     return (run_args, gen_args) => {
@@ -201,7 +202,7 @@ _functions.range = (that, args) => {
     };
 };
 
-_functions.iter = (...args) => {
+_functions.iter = (args) => {
     const {v: values, s: step} = expand_args({v: [0, 1], s: 1}, args);
 
     return (run_args, gen_args) => {
@@ -228,26 +229,39 @@ _functions.iter = (...args) => {
     };
 };
 
-_functions.choose = (...args) => {
+_functions.choose = (args) => {
     const {v: values, s: scale} = expand_args({v: [0, 1], s: 1}, args);
 
     return (run_args, gen_args) => {
         const [vv, sv] = freeze_values([values, scale], run_args, gen_args);
-        let idx = gen_args.input;
-        idx = idx * sv;
-        if (idx < 0) {
-            idx = -idx;
+
+        if (vv.length === 0) {
+            return 0;
         }
-        idx = Math.floor(idx);
+        
+        let idx = undefault(gen_args.input, 0);
+        idx = idx * sv;
 
-        const vs = vv;
+        idx = Math.floor(Math.abs(idx));
+        idx = idx % vv.length;
 
-        idx = idx % vs.length;
+        let val = vv[idx];
 
-        const val = vs[idx];
+        const fmark = `choose_mark_${new Date().getTime()}`;
+        let maxcnt = 10;
 
-        if (typeof val === 'function') {
-            return val(...run_args, gen_args);
+        while (typeof val === 'function') {
+            const fn = val;
+            fn.__choose_mark = fmark;
+
+            val = fn(...run_args, gen_args);
+            if (maxcnt-- <= 0 || (typeof val === 'function' && val.__choose_mark === fmark)) {
+                // loop detected
+                val = 0;
+                break;
+            }
+
+            delete fn.__choose_mark;
         }
         return val;
     };
@@ -261,7 +275,7 @@ _functions.sin = (...args) => {
         let time = 0;
 
         if (gen_args.input) {
-            time = input;
+            time = gen_args.input;
         } else {
             time = get_time(...run_args, gen_args);
         }
@@ -270,7 +284,7 @@ _functions.sin = (...args) => {
     };
 };
 
-_functions.floor = (that, args) => {
+_functions.floor = (args) => {
     const {d: digits} = expand_args({d: 0}, args);
 
     return (run_args, gen_args) => {
@@ -281,7 +295,7 @@ _functions.floor = (that, args) => {
     };
 };
 
-_functions.set = (that, args) => {
+_functions.set = (args) => {
     const {v: value} = expand_args({v: 0}, args);
 
     return (run_args, gen_args) => {
@@ -290,7 +304,7 @@ _functions.set = (that, args) => {
     };
 };
 
-_functions.mul = (that, args) => {
+_functions.mul = (args) => {
     const {v: value} = expand_args({v: 0}, args);
 
     return (run_args, gen_args) => {
@@ -299,7 +313,7 @@ _functions.mul = (that, args) => {
     };
 };
 
-_functions.div = (that, args) => {
+_functions.div = (args) => {
     const {v: value} = expand_args({v: 1}, args);
 
     return (run_args, gen_args) => {
@@ -314,7 +328,7 @@ _functions.div = (that, args) => {
     };
 };
 
-_functions.mod = (that, args) => {
+_functions.mod = (args) => {
     const {v: value} = expand_args({v: 1}, args);
 
     return (run_args, gen_args) => {
@@ -327,7 +341,7 @@ _functions.mod = (that, args) => {
     };
 };
 
-_functions.slew = (that, args) => {
+_functions.slew = (args) => {
     const {r: rate, x: max} = expand_args({r: 1, x: Number.MAX_VALUE}, args);
 
     return (run_args, gen_args) => {
@@ -362,77 +376,121 @@ _functions.slew = (that, args) => {
     };
 };
 
-_functions.apply = (that, args) => {
+_functions.map = (args) => {
     const {f: func} = expand_args({f: (x) => x}, args);
 
     return (run_args, gen_args) => func(...run_args, gen_args);
 };
 
-const GenChain = function (state = {}) {
-    const that = this;
+_functions.beats = (args) => {
+    const {s: scale, b: sbpm} = expand_args({s: 1, b: ud}, args);
 
-    that.state = state;
-    that.calls = [];
-
-    that.run = (...args) => {
-        let run_args = args;
-        if (typeof run_args === 'undefined' || run_args.length === 0) {
-            run_args = [{}];
-        }
-        if (typeof run_args[0] === 'undefined') {
-            run_args[0] = {};
+    return (run_args, gen_args) => {
+        const [sv, bv] = freeze_values([scale, sbpm], run_args, gen_args);
+        const {time, bpm} = run_args;
+        
+        let abpm = bv;
+        if (typeof abpm === 'undefined') {
+            abpm = bpm;
         }
 
-        let gen_args = {
-            input: ud
-            , private_state: {}
-            , run_state: {
-                initial_args: args
-                , time_scale: 1
-                , initial_time: get_time(...run_args)
-            }
-        };
-        for (let i = 0; i < that.calls.length; i++) {
-            const {call: fncall, state: private_state} = that.calls[i];
-            gen_args.private_state = private_state;
-
-            run_args[0].time = gen_args.run_state.initial_time * gen_args.run_state.time_scale;
-            
-            const res = fncall(run_args, gen_args);
-
-            if (typeof res === 'undefined') {
-                gen_args.input = 0;
-            } else {
-                gen_args.input = res;
-            }
-        }
+        gen_args.values.time = undefault(time, 0) / 60 * abpm * sv;
 
         return gen_args.input;
     };
-
-    that._add_call = (call) => {
-        that.calls.push({call, state: {}});
-    };
-
-    that._that_fun = (...args) => that.run(...args);
-    that._that_fun.run = that.run;
-
-    that._wire_call = (name, gen) => {
-        that[name] = (...args) => {
-            that._add_call(gen(that, args));
-            return that._that_fun;
-        };
-        that._that_fun[name] = that[name];
-    };
-
-    Object.entries(_functions)
-        .forEach(([name, fn]) => that._wire_call(name, fn));
-
 };
 
-export const start = () => new GenChain();
+_functions.use = (args) => {
+    const {n: name, c: copy} = expand_args({n: "val", c: false}, args);
 
-const setup_init_call = (fun, ...args) => start()[fun](...args);
+    return (run_args, gen_args) => {
+        const [nv, cv] = freeze_values([name, copy], run_args, gen_args);
+
+        let ret = gen_args.values[nv];
+        
+        if (cv) {
+            ret = gen_args.input;
+        }
+        gen_args.current_value = nv;
+
+        return ret;
+    };
+};
+
+_functions.noop = () => ((_, gen_args) => gen_args.input);
+_functions.gen = _functions.noop;
+
+_functions.used = () => ((_, gen_args) => gen_args.current_value);
+
+const run_calls = (global_state, instance_state, calls, args) => {
+    let run_args = args;
+    if (typeof run_args === 'undefined' || run_args.length === 0) {
+        run_args = [{}];
+    }
+    if (typeof run_args[0] === 'undefined') {
+        run_args[0] = {};
+    }
+
+    const gen_args = {
+        input: ud
+        , current_value: "val"
+        , values: {
+            val: ud
+            , initial_args: args
+            , ...run_args[0]
+        }
+        , global_state
+        , instance_state
+        , private_state: {}
+    };
+
+    gen_args.values.initial_time = get_time(gen_args.values);
+    gen_args.values.time = gen_args.values.initial_time;
+
+    run_args[0] = gen_args.values;
+
+    calls.forEach(([fncall, private_state]) => {
+        gen_args.private_state = private_state;
+        gen_args.input = gen_args.values[gen_args.current_value];
+
+        const res = fncall(run_args, gen_args);
+
+        gen_args.values[gen_args.current_value] = res;
+    });
+    
+    const rval = gen_args.values[gen_args.current_value];
+    if (typeof rval === 'undefined') {
+        return 0;
+    }
+
+    return rval;
+};
+
+const sub_call = (global_state, prev_calls, fun) => {
+    const calls = prev_calls.map((x) => [x, {}]);
+    const instance_state = {};
+
+    if (typeof fun !== 'undefined') {
+        calls.push([fun, {}]);
+    }
+
+    const rfun = (...args) => run_calls(global_state, instance_state, calls, args);
+    rfun.run = rfun;
+
+    Object.entries(_functions).forEach(([name, gen]) => {
+        rfun[name] = (...args) => sub_call(
+            global_state
+            , calls.map(([call]) => call)
+            , gen(args)
+        );
+    });
+
+    return rfun;
+};
+
+export const start = (global_state = {}) => sub_call(global_state, []);
+
+const setup_init_call = (fun, ...args) => (start()[fun])(...args);
 
 /* eslint-disable no-multi-spaces */
 export const add    = (...args) => setup_init_call("add", ...args);
@@ -448,3 +506,7 @@ export const choose = (...args) => setup_init_call("choose", ...args);
 export const slew   = (...args) => setup_init_call("slew", ...args);
 export const set    = (...args) => setup_init_call("set", ...args);
 export const rnd    = (...args) => setup_init_call("rnd", ...args);
+export const use    = (...args) => setup_init_call("use", ...args);
+export const used   = (...args) => setup_init_call("used", ...args);
+export const noop   = (...args) => setup_init_call("noop", ...args);
+export const gen   =  (...args) => setup_init_call("gen", ...args);
