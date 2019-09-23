@@ -72,15 +72,15 @@ export const get_time = (args) => {
     return new Date().getTime() / 1000.0;
 };
 
-export const freeze_values = (v, args) => {
+export const freeze_values = (v, args, gen_args) => {
     if (typeof v === 'undefined') {
         return v;
     }
     if (typeof v === 'function') {
-        return v(args);
+        return v(...args, gen_args);
     }
     if (Array.isArray(v)) {
-        return v.map((x) => freeze_values(x, args));
+        return v.map((x) => freeze_values(x, args, gen_args));
     }
     return v;
 };
@@ -90,50 +90,50 @@ const _functions = {};
 _functions.add = (that, args) => {
     const {v: value} = expand_args({v: 0}, args);
 
-    return (input, run_args) => {
-        const vv = freeze_values(value, run_args);
-        return undefault(input, 0) + vv;
+    return (run_args, gen_args) => {
+        const vv = freeze_values(value, run_args, gen_args);
+        return undefault(gen_args.input, 0) + vv;
     };
 };
 
 _functions.speed = (that, args) => {
     const {v: value, m: mix} = expand_args({v: ud, m: ud}, args);
 
-    return (input, run_args, private_state, run_state) => {
-        const [vv, mv] = freeze_values([value, mix], run_args);
+    return (run_args, gen_args) => {
+        const [vv, mv] = freeze_values([value, mix], run_args, gen_args);
         
         if (typeof vv === 'undefined') {
             if (typeof input !== 'undefined') {
-                run_state.time_scale = input;
+                gen_args.run_state.time_scale = input;
             }
         } else if (typeof input === 'undefined') {
-            run_state.time_scale = vv;
+            gen_args.run_state.time_scale = vv;
         } else if (typeof mv === 'undefined') {
-            run_state.time_scale = vv;
+            gen_args.run_state.time_scale = vv;
         } else {
-            run_state.time_scale = mix_values(vv, input, mv);
+            gen_args.run_state.time_scale = mix_values(vv, gen_args.input, mv);
         }
 
-        return input;
+        return gen_args.input;
     };
 };
 
 _functions.fast = (that, args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: ud, o: 0, m: 0}, args);
-    return (input, run_args, private_state, run_state) => {
-        const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args);
+    return (run_args, gen_args) => {
+        const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
         
         if (typeof input === 'undefined') {
             if (typeof sv !== 'undefined') {
-                run_state.time_scale = run_state.time_scale * sv;
+                gen_args.run_state.time_scale = gen_args.run_state.time_scale * sv;
             }
         } else if (typeof sv === 'undefined') {
-            run_state.time_scale = run_state.time_scale * input;
+            gen_args.run_state.time_scale = gen_args.run_state.time_scale * input;
         } else {
-            run_state.time_scale = run_state.time_scale * mix_values(sv, input, mv);
+            gen_args.run_state.time_scale = gen_args.run_state.time_scale * mix_values(sv, input, mv);
         }
 
-        run_state.time_scale = run_state.time_scale + ov;
+        gen_args.run_state.time_scale = gen_args.run_state.time_scale + ov;
         
         return input;
     };
@@ -142,8 +142,8 @@ _functions.fast = (that, args) => {
 _functions.time = (that, args) => {
     const {s: scale, o: offset} = expand_args({s: 1, o: 0}, args);
 
-    return (input, run_args) => {
-        const [sv, ov] = freeze_values([scale, offset], run_args);
+    return (run_args, gen_args) => {
+        const [sv, ov] = freeze_values([scale, offset], run_args, gen_args);
 
         return (get_time(...run_args) * sv) + ov;
     };
@@ -152,8 +152,8 @@ _functions.time = (that, args) => {
 _functions.rnd = (that, args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: 1, o: 0, m: 0}, args);
 
-    return (input, run_args) => {
-        const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args);
+    return (run_args, gen_args) => {
+        const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
 
         let svx = 1;
         if (typeof input === 'undefined') {
@@ -173,14 +173,14 @@ _functions.rnd = (that, args) => {
 _functions.range = (that, args) => {
     const {u: upper, l: lower, s: step} = expand_args({u: 10, l: 0, s: 1}, args);
 
-    return (input, run_args, private_state) => {
-        const [sv, uv, lv] = freeze_values([step, upper, lower], run_args);
+    return (run_args, gen_args) => {
+        const [sv, uv, lv] = freeze_values([step, upper, lower], run_args, gen_args);
         
         let npi = 0;
-        if (private_state.prev) {
-            const {spi = 0} = private_state.prev;
+        if (gen_args.private_state.prev) {
+            const {spi = 0} = gen_args.private_state.prev;
 
-            npi = spi + sv + input;
+            npi = spi + sv + gen_args.input;
 
             if (npi >= uv) {
                 npi = lv;
@@ -195,7 +195,7 @@ _functions.range = (that, args) => {
             npi = uv;
         }
 
-        private_state.prev = {spi: npi};
+        gen_args.private_state.prev = {spi: npi};
 
         return npi;
     };
@@ -204,15 +204,15 @@ _functions.range = (that, args) => {
 _functions.iter = (...args) => {
     const {v: values, s: step} = expand_args({v: [0, 1], s: 1}, args);
 
-    return (input, run_args, private_state) => {
-        const [vv, sv] = freeze_values([values, step], run_args);
+    return (run_args, gen_args) => {
+        const [vv, sv] = freeze_values([values, step], run_args, gen_args);
 
-        let {pi = 0} = private_state.prev ? private_state.prev : {};
+        let {pi = 0} = gen_args.private_state.prev ? gen_args.private_state.prev : {};
 
-        if (private_state.prev) {
-            pi = sv + pi + input;
+        if (gen_args.private_state.prev) {
+            pi = sv + pi + undefault(gen_args.input, 0);
         }
-        private_state.prev = {pi};
+        gen_args.private_state.prev = {pi};
 
         const vs = vv;
         let idx = Math.floor(pi);
@@ -231,9 +231,9 @@ _functions.iter = (...args) => {
 _functions.choose = (...args) => {
     const {v: values, s: scale} = expand_args({v: [0, 1], s: 1}, args);
 
-    return (input, run_args) => {
-        const [vv, sv] = freeze_values([values, scale], run_args);
-        let idx = input;
+    return (run_args, gen_args) => {
+        const [vv, sv] = freeze_values([values, scale], run_args, gen_args);
+        let idx = gen_args.input;
         idx = idx * sv;
         if (idx < 0) {
             idx = -idx;
@@ -247,7 +247,7 @@ _functions.choose = (...args) => {
         const val = vs[idx];
 
         if (typeof val === 'function') {
-            return val(...run_args);
+            return val(...run_args, gen_args);
         }
         return val;
     };
@@ -256,14 +256,14 @@ _functions.choose = (...args) => {
 _functions.sin = (...args) => {
     const {f: frequency, s: scale, o: offset} = expand_args({f: 1, s: 1, o: 0}, args);
 
-    return (input, run_args) => {
-        const [fv, sv, ov] = freeze_values([frequency, scale, offset], run_args);
+    return (run_args, gen_args) => {
+        const [fv, sv, ov] = freeze_values([frequency, scale, offset], run_args, gen_args);
         let time = 0;
 
-        if (input) {
+        if (gen_args.input) {
             time = input;
         } else {
-            time = get_time(...run_args);
+            time = get_time(...run_args, gen_args);
         }
 
         return (((Math.sin(time * 2 * Math.PI * fv) / 2) + 0.5) * sv) + ov;
@@ -273,19 +273,19 @@ _functions.sin = (...args) => {
 _functions.floor = (that, args) => {
     const {d: digits} = expand_args({d: 0}, args);
 
-    return (input, run_args) => {
-        const dv = freeze_values(digits, run_args);
+    return (run_args, gen_args) => {
+        const dv = freeze_values(digits, run_args, gen_args);
         const fact = Math.power(10, dv);
 
-        return Math.floor(input * fact) / fact;
+        return Math.floor(gen_args.input * fact) / fact;
     };
 };
 
 _functions.set = (that, args) => {
     const {v: value} = expand_args({v: 0}, args);
 
-    return (input, run_args) => {
-        const vv = freeze_values(value, run_args);
+    return (run_args, gen_args) => {
+        const vv = freeze_values(value, run_args, gen_args);
         return vv;
     };
 };
@@ -293,19 +293,19 @@ _functions.set = (that, args) => {
 _functions.mul = (that, args) => {
     const {v: value} = expand_args({v: 0}, args);
 
-    return (input, run_args) => {
-        const vv = freeze_values(value, run_args);
-        return input * vv;
+    return (run_args, gen_args) => {
+        const vv = freeze_values(value, run_args, gen_args);
+        return gen_args.input * vv;
     };
 };
 
 _functions.div = (that, args) => {
     const {v: value} = expand_args({v: 1}, args);
 
-    return (input, run_args) => {
-        const vv = freeze_values(value, run_args);
+    return (run_args, gen_args) => {
+        const vv = freeze_values(value, run_args, gen_args);
 
-        const definput = undefault(input, 0);
+        const definput = undefault(gen_args.input, 0);
         
         if (vv === 0) {
             return definput / 0.0000000000001;
@@ -317,27 +317,31 @@ _functions.div = (that, args) => {
 _functions.mod = (that, args) => {
     const {v: value} = expand_args({v: 1}, args);
 
-    return (input, run_args) => {
-        const vv = freeze_values(value, run_args);
+    return (run_args, gen_args) => {
+        const vv = freeze_values(value, run_args, gen_args);
         
         if (vv === 0) {
             return 0;
         }
-        return input % vv;
+        return undefault(gen_args.input, 0) % vv;
     };
 };
 
 _functions.slew = (that, args) => {
     const {r: rate, x: max} = expand_args({r: 1, x: Number.MAX_VALUE}, args);
 
-    return (input, run_args, private_state) => {
-        const [rv, xv] = freeze_values([rate, max], run_args);
+    return (run_args, gen_args) => {
+        const [rv, xv] = freeze_values([rate, max], run_args, gen_args);
 
-        if (!private_state.prev) {
-            private_state.prev = input;
+        if (!gen_args.private_state.prev) {
+            gen_args.private_state.prev = gen_args.input;
+        }
+        let genin = gen_args.input;
+        if (typeof genin === 'undefined') {
+            genin = gen_args.private_state.prev;
         }
 
-        let diff = (input - private_state.prev);
+        let diff = (genin - gen_args.private_state.prev);
 
         if (rv > 0) {
             diff = diff * (1 - (1 / rv));
@@ -350,9 +354,9 @@ _functions.slew = (that, args) => {
             diff = -xv;
         }
 
-        const nv = private_state.prev + diff;
+        const nv = gen_args.private_state.prev + diff;
 
-        private_state.prev = nv;
+        gen_args.private_state.prev = nv;
 
         return nv;
     };
@@ -361,7 +365,7 @@ _functions.slew = (that, args) => {
 _functions.apply = (that, args) => {
     const {f: func} = expand_args({f: (x) => x}, args);
 
-    return (input, run_args, private_state) => func(input, run_args, private_state);
+    return (run_args, gen_args) => func(...run_args, gen_args);
 };
 
 const GenChain = function (state = {}) {
@@ -379,27 +383,31 @@ const GenChain = function (state = {}) {
             run_args[0] = {};
         }
 
-        const run_state = {
-            initial_args: args
-            , time_scale: 1
-            , initial_time: get_time(...run_args)
+        let gen_args = {
+            input: ud
+            , private_state: {}
+            , run_state: {
+                initial_args: args
+                , time_scale: 1
+                , initial_time: get_time(...run_args)
+            }
         };
-        let input = ud;
         for (let i = 0; i < that.calls.length; i++) {
             const {call: fncall, state: private_state} = that.calls[i];
+            gen_args.private_state = private_state;
 
-            run_args[0].time = run_state.initial_time * run_state.time_scale;
-
-            const res = fncall(input, run_args, private_state, run_state);
+            run_args[0].time = gen_args.run_state.initial_time * gen_args.run_state.time_scale;
+            
+            const res = fncall(run_args, gen_args);
 
             if (typeof res === 'undefined') {
-                input = 0;
+                gen_args.input = 0;
             } else {
-                input = res;
+                gen_args.input = res;
             }
         }
 
-        return input;
+        return gen_args.input;
     };
 
     that._add_call = (call) => {

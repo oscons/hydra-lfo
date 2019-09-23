@@ -49,9 +49,9 @@ describe("Utilities ", function () {
     describe("freeze_values", function () {
         it("works as expected", function () {
             const frozen = L.freeze_values([
-                (args) => args[0]
-                , (args) => args[1]
-                , (args) => args[2]
+                (...args) => args[0]
+                , (...args) => args[1]
+                , (...args) => args[2]
                 , ud
                 , 7
             ], [1, 2, 3, ud, ud]);
