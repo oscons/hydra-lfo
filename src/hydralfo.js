@@ -1,16 +1,18 @@
 // eslint-disable-next-line no-empty-function
 const ud = ((function () {})());
 
-export const mix_values = (a, b, m) => (m === 0 ? a : (m === 1 ? b : (a * (1 - m)) + (b * m)));
+const CANARY = "__hydralfo_func";
 
-export const undefault = (x, def) => {
+const mix_values = (a, b, m) => (m === 0 ? a : (m === 1 ? b : (a * (1 - m)) + (b * m)));
+
+const undefault = (x, def) => {
     if (typeof x === 'undefined') {
         return def;
     }
     return x;
 };
 
-export const expand_args = (arg_def, args) => {
+const expand_args = (arg_def, args) => {
     const vals = {...undefault(arg_def, {})};
 
     if (typeof args !== 'undefined' && args.length > 0) {
@@ -35,12 +37,16 @@ export const expand_args = (arg_def, args) => {
         const ax = arg_def[x];
 
         if (typeof vx === 'function') {
-            vals[x] = (call_args, call_gen_args) => {
+            vals[x] = (input, call_gen_args, call_args) => {
                 let nargs = call_args;
                 if (typeof nargs === 'undefined') {
                     nargs = [];
                 }
-                return undefault(vx(...nargs, call_gen_args), ax);
+                if (CANARY in vx) {
+                    return undefault(vx.run(call_args), ax);
+                }
+
+                return undefault(vx(input, call_gen_args, call_args), ax);
             };
         } else if (typeof vx === 'undefined') {
             vals[x] = () => ax;
@@ -52,7 +58,7 @@ export const expand_args = (arg_def, args) => {
     return vals;
 };
 
-export const get_time = (run_args, gen_args, allow_undef = false) => {
+const get_time = (gen_args, run_args, allow_undef = false) => {
     let time = ud;
     let namedargs = run_args;
 
@@ -82,7 +88,7 @@ export const get_time = (run_args, gen_args, allow_undef = false) => {
     return new Date().getTime() / 1000.0;
 };
 
-export const freeze_values = (v, args, gen_args) => {
+const freeze_values = (v, args, gen_args) => {
     if (typeof v === 'undefined') {
         return v;
     }
@@ -100,40 +106,40 @@ const _functions = {};
 _functions.add = (args) => {
     const {v: value} = expand_args({v: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const vv = freeze_values(value, run_args, gen_args);
-        return undefault(gen_args.input, 0) + vv;
+        return undefault(input, 0) + vv;
     };
 };
 
 _functions.speed = (args) => {
     const {v: value, m: mix} = expand_args({v: ud, m: ud}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [vv, mv] = freeze_values([value, mix], run_args, gen_args);
         
         let time_scale = 1;
         if (typeof vv === 'undefined') {
             if (typeof input !== 'undefined') {
-                time_scale = gen_args.input;
+                time_scale = input;
             }
         } else if (typeof input === 'undefined') {
             time_scale = vv;
         } else if (typeof mv === 'undefined') {
             time_scale = vv;
         } else {
-            time_scale = mix_values(vv, gen_args.input, mv);
+            time_scale = mix_values(vv, input, mv);
         }
 
         gen_args.values.time = time_scale * gen_args.values.time;
 
-        return gen_args.input;
+        return input;
     };
 };
 
 _functions.fast = (args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: ud, o: 0, m: 0}, args);
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
         
         let time_scale = 1;
@@ -142,31 +148,31 @@ _functions.fast = (args) => {
                 time_scale = sv;
             }
         } else if (typeof sv === 'undefined') {
-            time_scale = gen_args.input;
+            time_scale = input;
         } else {
-            time_scale = mix_values(sv, gen_args.input, mv);
+            time_scale = mix_values(sv, input, mv);
         }
 
         gen_args.values.time = (time_scale * gen_args.values.time) + ov;
         
-        return gen_args.input;
+        return input;
     };
 };
 
 _functions.time = (args) => {
     const {s: scale, o: offset} = expand_args({s: 1, o: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [sv, ov] = freeze_values([scale, offset], run_args, gen_args);
 
-        return (get_time(run_args, gen_args) * sv) + ov;
+        return (get_time(gen_args, run_args) * sv) + ov;
     };
 };
 
 _functions.rnd = (args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: 1, o: 0, m: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
 
         let svx = 1;
@@ -175,9 +181,9 @@ _functions.rnd = (args) => {
                 svx = sv;
             }
         } else if (typeof sv === 'undefined') {
-            svx = gen_args.input;
+            svx = input;
         } else {
-            svx = mix_values(svx, gen_args.input, mv);
+            svx = mix_values(svx, input, mv);
         }
 
         return (Math.random() * svx) + ov;
@@ -187,14 +193,14 @@ _functions.rnd = (args) => {
 _functions.range = (args) => {
     const {u: upper, l: lower, s: step} = expand_args({u: 10, l: 0, s: 1}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [sv, uv, lv] = freeze_values([step, upper, lower], run_args, gen_args);
         
         let npi = 0;
         if (gen_args.private_state.prev) {
             const {spi = 0} = gen_args.private_state.prev;
 
-            npi = spi + sv + gen_args.input;
+            npi = spi + sv + input;
 
             if (npi >= uv) {
                 npi = lv;
@@ -218,13 +224,13 @@ _functions.range = (args) => {
 _functions.iter = (args) => {
     const {v: values, s: step} = expand_args({v: [0, 1], s: 1}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [vv, sv] = freeze_values([values, step], run_args, gen_args);
 
         let {pi = 0} = gen_args.private_state.prev ? gen_args.private_state.prev : {};
 
         if (gen_args.private_state.prev) {
-            pi = sv + pi + undefault(gen_args.input, 0);
+            pi = sv + pi + undefault(input, 0);
         }
         gen_args.private_state.prev = {pi};
 
@@ -236,7 +242,7 @@ _functions.iter = (args) => {
         const val = vs[idx];
 
         if (typeof val === 'function') {
-            return val(...run_args);
+            return val(input, gen_args, run_args);
         }
         return val;
     };
@@ -245,14 +251,14 @@ _functions.iter = (args) => {
 _functions.choose = (args) => {
     const {v: values, s: scale} = expand_args({v: [0, 1], s: 1}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [vv, sv] = freeze_values([values, scale], run_args, gen_args);
 
         if (vv.length === 0) {
             return 0;
         }
         
-        let idx = undefault(gen_args.input, 0);
+        let idx = undefault(input, 0);
         idx = idx * sv;
 
         idx = Math.floor(Math.abs(idx));
@@ -283,15 +289,15 @@ _functions.choose = (args) => {
 _functions.sin = (args) => {
     const {f: frequency, s: scale, o: offset} = expand_args({f: 1, s: 1, o: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [fv, sv, ov] = freeze_values([frequency, scale, offset], run_args, gen_args);
         let time = 0;
 
-        if (typeof gen_args.input === 'undefined') {
-            time = get_time(run_args, gen_args);
+        if (typeof input === 'undefined') {
+            time = get_time(gen_args, run_args);
             
         } else {
-            time = gen_args.input;
+            time = input;
         }
         time = undefault(time, Math.PI);
 
@@ -302,18 +308,18 @@ _functions.sin = (args) => {
 _functions.floor = (args) => {
     const {d: digits} = expand_args({d: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const dv = freeze_values(digits, run_args, gen_args);
         const fact = Math.pow(10, dv);
 
-        return Math.floor(gen_args.input * fact) / fact;
+        return Math.floor(input * fact) / fact;
     };
 };
 
 _functions.set = (args) => {
     const {v: value} = expand_args({v: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const vv = freeze_values(value, run_args, gen_args);
         return vv;
     };
@@ -322,19 +328,19 @@ _functions.set = (args) => {
 _functions.mul = (args) => {
     const {v: value} = expand_args({v: 0}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const vv = freeze_values(value, run_args, gen_args);
-        return gen_args.input * vv;
+        return input * vv;
     };
 };
 
 _functions.div = (args) => {
     const {v: value} = expand_args({v: 1}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const vv = freeze_values(value, run_args, gen_args);
 
-        const definput = undefault(gen_args.input, 0);
+        const definput = undefault(input, 0);
         
         if (vv === 0) {
             return definput / 0.0000000000001;
@@ -346,26 +352,26 @@ _functions.div = (args) => {
 _functions.mod = (args) => {
     const {v: value} = expand_args({v: 1}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const vv = freeze_values(value, run_args, gen_args);
         
         if (vv === 0) {
             return 0;
         }
-        return undefault(gen_args.input, 0) % vv;
+        return undefault(input, 0) % vv;
     };
 };
 
 _functions.slew = (args) => {
     const {r: rate, x: max} = expand_args({r: 1, x: Number.MAX_VALUE}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [rv, xv] = freeze_values([rate, max], run_args, gen_args);
 
         if (!gen_args.private_state.prev) {
-            gen_args.private_state.prev = gen_args.input;
+            gen_args.private_state.prev = input;
         }
-        let genin = gen_args.input;
+        let genin = input;
         if (typeof genin === 'undefined') {
             genin = gen_args.private_state.prev;
         }
@@ -394,13 +400,16 @@ _functions.slew = (args) => {
 _functions.map = (args) => {
     const {f: func} = expand_args({f: (x) => x}, args);
 
-    return (run_args, gen_args) => func(...run_args, gen_args);
+    return (value, gen_args, run_args) => {
+        console.log({run_args, gen_args});
+        return func(value, gen_args, ...run_args);
+    };
 };
 
 _functions.beats = (args) => {
     const {s: scale, b: sbpm} = expand_args({s: 1, b: ud}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [sv, bv] = freeze_values([scale, sbpm], run_args, gen_args);
         const {time, bpm} = run_args;
         
@@ -411,20 +420,20 @@ _functions.beats = (args) => {
 
         gen_args.values.time = undefault(time, 0) / 60 * abpm * sv;
 
-        return gen_args.input;
+        return input;
     };
 };
 
 _functions.use = (args) => {
     const {n: name, c: copy} = expand_args({n: "val", c: false}, args);
 
-    return (run_args, gen_args) => {
+    return (input, gen_args, run_args) => {
         const [nv, cv] = freeze_values([name, copy], run_args, gen_args);
 
         let ret = gen_args.values[nv];
         
         if (cv) {
-            ret = gen_args.input;
+            ret = input;
         }
         gen_args.current_value = nv;
 
@@ -432,7 +441,7 @@ _functions.use = (args) => {
     };
 };
 
-_functions.noop = () => ((_, gen_args) => gen_args.input);
+_functions.noop = () => ((input) => input);
 _functions.gen = _functions.noop;
 
 _functions.used = () => ((_, gen_args) => gen_args.current_value);
@@ -468,7 +477,7 @@ const run_calls = (global_state, instance_state, calls, args) => {
         gen_args.private_state = private_state;
         gen_args.input = gen_args.values[gen_args.current_value];
 
-        const res = fncall(run_args, gen_args);
+        const res = fncall(gen_args.input, gen_args, run_args);
 
         gen_args.values[gen_args.current_value] = res;
     });
@@ -491,8 +500,13 @@ const sub_call = (global_state, prev_calls, fun) => {
 
     const rfun = (...args) => run_calls(global_state, instance_state, calls, args);
     rfun.run = rfun;
+    rfun[CANARY] = true;
 
     Object.entries(_functions).forEach(([name, gen]) => {
+        if (name in rfun && !(name in Object.getOwnPropertyNames())) {
+            throw new Error(`${name} already exists on parents of rfun`);
+        }
+
         rfun[name] = (...args) => sub_call(
             global_state
             , calls.map(([call]) => call)
@@ -503,31 +517,53 @@ const sub_call = (global_state, prev_calls, fun) => {
     return rfun;
 };
 
-export const start = (global_state = {}) => sub_call(global_state, []);
+const get_global_env = () => {
+    if (typeof window !== 'undefined') {
+        return window;
+    }
+    return global;
+};
 
-const setup_init_call = (fun, ...args) => (start()[fun])(...args);
+const make_new_lfo = (state) => {
+    const fdef = {};
+    const global_state = typeof state === 'undefined' ? {} : state;
+    
+    Object.keys(_functions).forEach((name) => {
+        fdef[name] = (...args) => sub_call(global_state, [])[name](...args);
+    });
 
-/* eslint-disable no-multi-spaces */
-export const use    = (...args) => setup_init_call("use", ...args);
-export const used   = (...args) => setup_init_call("used", ...args);
-export const noop   = (...args) => setup_init_call("noop", ...args);
-export const gen   =  (...args) => setup_init_call("gen", ...args);
+    fdef.__release = (new_lfo) => {
+        // for future use, e.g. to stop timeouts etc
+    };
 
-export const set    = (...args) => setup_init_call("set", ...args);
-export const rnd    = (...args) => setup_init_call("rnd", ...args);
+    return fdef;
+};
 
-export const add    = (...args) => setup_init_call("add", ...args);
-export const mul    = (...args) => setup_init_call("mul", ...args);
-export const mod    = (...args) => setup_init_call("mod", ...args);
-export const div    = (...args) => setup_init_call("div", ...args);
+const GLOBAL_INIT_ID = "__hydralfo_global";
 
-export const time   = (...args) => setup_init_call("time", ...args);
-export const speed  = (...args) => setup_init_call("speed", ...args);
-export const fast   = (...args) => setup_init_call("fast", ...args);
+export const init = (state = ud, init_global = true, force = false) => {
+    const new_lfo = make_new_lfo(state);
 
-export const slew   = (...args) => setup_init_call("slew", ...args);
+    if (!init_global) {
+        return new_lfo;
+    }
 
-export const sin    = (...args) => setup_init_call("sin", ...args);
-export const range  = (...args) => setup_init_call("range", ...args);
-export const iter   = (...args) => setup_init_call("iter", ...args);
-export const choose = (...args) => setup_init_call("choose", ...args);
+    const env = get_global_env();
+
+    if (typeof env !== 'undefined') {
+        if (CANARY in env) {
+            const old_lfo = env[CANARY];
+            if (typeof old_lfo === 'object') {
+                if (!force) {
+                    return env[CANARY];
+                }
+                if ('__release' in old_lfo) {
+                    old_lfo.__release(new_lfo);
+                }
+            }
+        }
+        env[CANARY] = new_lfo;
+    }
+
+    return new_lfo;
+};

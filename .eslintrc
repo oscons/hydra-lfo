@@ -49,6 +49,8 @@
         ]
         , "consistent-this": [ "error", "that"]
 
+        
+        , "multiline-comment-style": "off"
         , "no-nested-ternary": "off"
         , "newline-per-chained-call": "off"
         , "max-params": "off"

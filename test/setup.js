@@ -3,7 +3,9 @@
 "use strict";
 
 const assert = require('assert');
-const L = require('../src/hydralfo');
+const rewire = require("rewire");
+const hydralfo = rewire("../src/hydralfo");
+const L = hydralfo.init();
 
 // eslint-disable-next-line no-empty-function
 const ud = ((function () {})());

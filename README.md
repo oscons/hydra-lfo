@@ -10,7 +10,7 @@ npm run dist
 # Usage
 
 ```javascript
-L = require('hydralfo');
+L = require('hydralfo').init();
 
 // change shapes continously between 4 and <8
 shape(

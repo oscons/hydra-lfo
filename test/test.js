@@ -3,14 +3,32 @@
 "use strict";
 
 const assert = require('assert');
-const L = require('../src/hydralfo');
+const rewire = require("rewire");
+const hydralfo = rewire("../src/hydralfo");
+const L = hydralfo.init();
 
 // eslint-disable-next-line no-empty-function
 const ud = ((function () {})());
 
 describe('Overall', function () {
     
-    describe("As a function ", function () {
+    describe("init", function () {
+        it("Can multi init", function () {
+            const my_state = {};
+
+            let lfo0 = hydralfo.init(my_state, true, true);
+            let lfo2 = hydralfo.init({}, true, false);
+
+            lfo2.map((input, gen_args) => {
+                gen_args.global_state.foo = 'bar';
+                return input;
+            }).run();
+
+            assert.equal(my_state.foo, 'bar');
+        });
+    });
+
+    describe("behavior ", function () {
         it("Behaves like a function", function () {
             assert.equal(L.set(1)(), 1);
             assert.equal(L.time()({time: 1}), 1);
@@ -30,4 +48,12 @@ describe('Overall', function () {
         });
     });
 
+    describe("composable", function () {
+        it("recognizes the canary", function () {
+            assert.equal(L.set(1).set(L.set(10)).run(), 10);
+            assert.equal(L.set(1).map((i) => i).run(), 1);
+        });
+    });
+
 });
+
