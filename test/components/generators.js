@@ -1,3 +1,7 @@
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
+
 /* eslint-disable max-lines-per-function */
 /* eslint-env mocha */
 "use strict";
@@ -14,11 +18,18 @@ describe('Generators', function () {
     describe('range', function () {
         it("operates on the correct ranges", function () {
             [
-                [ud, [ud], [0, 0], [1, 1], [9, 9], [10, 0], [-5, 5]]
-                , [ud, [100], [0, 0], [1, 1], [9, 9], [50, 50], [-5, 95]]
-                , [ud, [100, 2], [0, 2], [1, 3], [9, 11], [50, 52], [-5, 95]]
+                [ud, [ud], [0, 0], [1, 0.1], [9, 0.9], [10, 0], [-5, 0.5]]
+                , [ud, [100], [0, 0], [1, 0.1], [9, 0.9], [50, 5], [-5, 99.5]]
+                , [ud, [100, 2], [0, 2], [1, 2.1], [9, 2.9], [50, 7], [-5, 99.5]]
                 , [ud, [100, 3, 2], [1, 5], [-1, 98]]
                 , [ud, [{u: 100}], [0, 0]]
+                , [ud, [{u: 100, l: 200}], [0, 100]]
+                , [ud, [{u: 100, l: -200}], [0, -200]]
+                , [ud, [{u: 100, l: 100}], [0, 100], [1, 100], [0.5, 100]]
+                , [5, [ud], [0, 0.5], [1, 0.5], [9, 0.5], [10, 0.5], [-5, 0.5]]
+                , [5, [100], [0, 0.5], [1, 0.5], [9, 0.5], [50, 0.5], [-5, 0.5]]
+                , [5, [100, 2], [0, 2.5], [1, 2.5], [9, 2.5], [50, 2.5], [-5, 2.5]]
+                , [5, [100, 3, 2], [1, 13], [-1, 13]]
             ].forEach(([init, params, ...runs], i) => {
                 runs.forEach(([time, result], j) => {
                     const v = L.set(init).range(...params).run({time});
@@ -31,12 +42,18 @@ describe('Generators', function () {
         it("it chooses one of the presented values", function () {
             [
                 [0, [[3, 2, 1]], 3]
+                , [0, [[]], 0]
                 , [ud, [[3, 2, 1]], 3]
                 , [1, [[3, 2, 1]], 2]
                 , [1, [{v: [3, 2, 1]}], 2]
                 , [1, [{v: [3, 2, 1], s: 2}], 1]
                 , [1, [{v: [3, 2, L.set(5)], s: 2}], 5]
                 , [1, [{v: [3, 2, () => 4], s: 2}], 4]
+
+                , [4, [{v: [3, 2, () => 4], s: 2}], 4]
+                , [7, [{v: [3, 2, () => 4], s: 2}], 4]
+                , [-1, [{v: [3, 2, () => 4], s: 2}], 4]
+
             ].forEach(([init, parms, result], i) => {
                 const ret = L.set(init).choose(...parms).run();
 
@@ -83,38 +100,42 @@ describe('Generators', function () {
                 , [ud, {s: 2, o: 1}, 1, 3]
                 , [2, ud, 0, 1]
                 , [2, 4, 0, 4]
+                , [1, 10, 0, 10]
                 , [2, {s: 4, o: 1, m: 0.5}, 1, 4]
-            ].forEach(function ([set, parms, lower, upper]) {
+            ].forEach(function ([set, parms, lower, upper], i) {
                 it(`should return random values in the correct range [${lower},${upper})`, function () {
                     let ret = 0;
                     
-                    let fn = L[randfun](parms);
-                    if (typeof set !== 'undefined') {
-                        fn = L.set(set)[randfun](parms);
-                    }
+                    const fn = L.set(set)[randfun](parms);
                     
                     ret = Array(1000).fill(1).map(() => fn.run());
                     ret.forEach((x) => {
                         assert.equal(typeof x, "number", `Not a number: ${x}`);
                     });
+
+                    const specials = [0, 1, -1];
+
                     ret = ret.reduce((prev, curr) => {
                         prev.cnt++;
 
                         prev.min = Math.min(prev.min, curr);
                         prev.max = Math.min(prev.max, curr);
 
-                        try {
-                            prev.agg[`v${curr}`]++;
-                        } catch (e) {
-                            prev.agg[`v${curr}`] = 1;
+                        const vn = `v${curr}`;
+                        if (typeof prev.agg[vn] === 'undefined') {
+                            prev.agg[vn] = 0;
                         }
-
+                        prev.agg[vn]++;
+                        
                         return prev;
                     }, {
                         min: Number.MAX_SAFE_INTEGER
                         , max: Number.MIN_SAFE_INTEGER
                         , cnt: 0
-                        , agg: {v0: lower, v1: upper}
+                        , agg: specials.reduce((h, v) => {
+                            h[`v${v}`] = 0;
+                            return h;
+                        }, {})
                     });
 
                     assert.equal(
@@ -122,8 +143,37 @@ describe('Generators', function () {
                         , true
                         , `Min/max out of range: min=${ret.min} max=${ret.max}`
                     );
-                    assert.equal(ret.agg.v0 < ret.cnt * 0.1, true);
+                    const ucnt = ret.agg[`v${upper}`];
+                    const lcnt = ret.agg[`v${lower}`];
 
+                    // maximum percent of the time that a single value is allowed to occur
+                    // since rnd returns "real" values, thresh could be set to 1
+                    const thresh = 4;
+                    assert.equal(lcnt < thresh, true, `case ${i}: lcnt=${lcnt}, ucnt=${ucnt}`);
+
+                    Object.entries(ret.agg).forEach(([name, value]) => {
+                        assert.equal(
+                            value < thresh
+                            , true
+                            , `case ${i}: value=${name} cnt=${value} runs=${ret.cnt} thresh=${thresh}`
+                        );
+                    });
+
+                    assert.equal(
+                        typeof ucnt === 'undefined' || ucnt === 0
+                        , true
+                        , `case ${i}: lcnt=${lcnt}, ucnt=${ucnt}`
+                    );
+
+                    specials.forEach((special) => {
+                        const sval = ret.agg[`v${special}`];
+                        if (lower <= special && special <= upper) {
+                            assert.equal(sval < thresh, true);
+                        } else {
+                            assert.equal(sval, 0);
+                        }
+                    });
+                    
                 });
             });
         });

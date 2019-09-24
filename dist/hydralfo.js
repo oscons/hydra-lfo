@@ -8,17 +8,63 @@ exports.functions = void 0;
 
 var _util = require("./util");
 
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
 const _functions = {};
 _functions.set = {
   doc: ``,
   fun: args => {
-    const {
-      v: value
-    } = (0, _util.expand_args)({
-      v: 0
-    }, args);
+    let avalue = 0;
+    let tgt_value = _util.ud;
+
+    if (typeof args !== 'undefined') {
+      if (Array.isArray(args)) {
+        if (args.length > 0) {
+          const [first_arg, second_arg] = args;
+
+          if (typeof first_arg === 'object') {
+            if (Array.isArray(first_arg)) {
+              avalue = 0;
+            } else if ('v' in first_arg) {
+              avalue = first_arg.v;
+            } else {
+              avalue = 0;
+            }
+          } else {
+            avalue = first_arg;
+          }
+
+          if (typeof second_arg === 'string') {
+            tgt_value = second_arg;
+          }
+        }
+      } else if (typeof args !== 'object') {
+        avalue = args;
+      }
+    }
+
+    if (typeof args !== 'undefined' && args.length > 0 && (typeof args[0] !== 'object' || Array.isArray(args[0]) || 'v' in Object.keys(args[0]))) {
+      const {
+        v
+      } = (0, _util.expand_args)({
+        v: _util.ud
+      }, args);
+      avalue = v;
+    }
+
+    const value = avalue;
     return (input, gen_args, run_args) => {
       const vv = (0, _util.freeze_values)(value, run_args, gen_args);
+
+      if (typeof tgt_value !== 'undefined') {
+        gen_args.values[tgt_value] = vv;
+
+        if (tgt_value !== gen_args.current_value) {
+          return input;
+        }
+      }
+
       return vv;
     };
   }
@@ -45,6 +91,21 @@ _functions.use = {
     };
   }
 };
+_functions.get = {
+  fun: args => {
+    const {
+      n: name
+    } = (0, _util.expand_args)({
+      n: "val"
+    }, args);
+    return (input, gen_args, run_args) => {
+      const [nv] = (0, _util.freeze_values)([name], run_args, gen_args);
+      const ret = gen_args.values[nv];
+      gen_args.current_value = ret;
+      return ret;
+    };
+  }
+};
 _functions.used = {
   fun: () => (_, gen_args) => gen_args.current_value
 };
@@ -64,8 +125,12 @@ exports.functions = void 0;
 
 var _util = require("./util");
 
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
 const _functions = {};
-const TAU = 2 * Math.PI;
+const TAU = 2 * Math.PI; // TODO: use LUTs
+
 _functions.sin = {
   fun: args => {
     const {
@@ -82,12 +147,12 @@ _functions.sin = {
       let time = 0;
 
       if (typeof input === 'undefined') {
-        time = (0, _util.get_time)(gen_args, run_args);
+        time = (0, _util.get_time)(gen_args, run_args, true);
       } else {
         time = input;
       }
 
-      time = (0, _util.undefault)(time, Math.PI);
+      time = (0, _util.undefault)(time, 0.25);
       return (Math.sin(time * TAU * fv) / 2 + 0.5) * sv + ov;
     };
   }
@@ -108,13 +173,15 @@ _functions.rnd = {
       let svx = 1;
 
       if (typeof input === 'undefined') {
-        if (typeof sv !== 'undefined') {
+        if (typeof sv === 'undefined') {
+          svx = 1;
+        } else {
           svx = sv;
         }
       } else if (typeof sv === 'undefined') {
         svx = input;
       } else {
-        svx = (0, _util.mix_values)(svx, input, mv);
+        svx = (0, _util.mix_values)(sv, input, mv);
       }
 
       return Math.random() * svx + ov;
@@ -129,72 +196,45 @@ _functions.range = {
       l: lower,
       s: step
     } = (0, _util.expand_args)({
-      u: 10,
+      u: 1,
       l: 0,
-      s: 1
+      s: 0.1
     }, args);
     return (input, gen_args, run_args) => {
-      const [sv, uv, lv] = (0, _util.freeze_values)([step, upper, lower], run_args, gen_args);
-      let npi = 0;
+      const [uv, lv, sv] = (0, _util.freeze_values)([upper, lower, step], run_args, gen_args);
+      let idx = input;
 
-      if (gen_args.private_state.prev) {
-        const {
-          spi = 0
-        } = gen_args.private_state.prev;
-        npi = spi + sv + input;
-
-        if (npi >= uv) {
-          npi = lv;
-        }
-
-        if (npi < lv && sv < 0) {
-          npi = uv;
-        }
-      } else if (sv > 0) {
-        npi = lv;
-      } else {
-        npi = uv;
+      if (typeof idx === 'undefined') {
+        idx = (0, _util.get_time)(gen_args, run_args);
       }
 
-      gen_args.private_state.prev = {
-        spi: npi
-      };
-      return npi;
-    };
-  }
-};
-_functions.iter = {
-  fun: args => {
-    const {
-      v: values,
-      s: step
-    } = (0, _util.expand_args)({
-      v: [0, 1],
-      s: 1
-    }, args);
-    return (input, gen_args, run_args) => {
-      const [vv, sv] = (0, _util.freeze_values)([values, step], run_args, gen_args);
-      let {
-        pi = 0
-      } = gen_args.private_state.prev ? gen_args.private_state.prev : {};
+      let ub = uv;
+      let lb = lv; // console.log({t: run_args[0].time, input, idx, ub, lb, sv});
 
-      if (gen_args.private_state.prev) {
-        pi = sv + pi + (0, _util.undefault)(input, 0);
+      if (ub < lb) {
+        const tmp = lb;
+        lb = ub;
+        ub = tmp;
+      } else if (ub === lb) {
+        return ub;
+      } else if (sv === 0 || idx === 0) {
+        return lb;
       }
 
-      gen_args.private_state.prev = {
-        pi
-      };
-      const vs = vv;
-      let idx = Math.floor(pi);
-      idx = idx % vs.length;
-      const val = vs[idx];
+      const range = ub - lb;
+      let v = sv * idx + lb; // console.log({v, sv, idx, lb, range});
+      // TODO: test if this can be replaced by "mod" (likely can)
 
-      if (typeof val === 'function') {
-        return val(input, gen_args, run_args);
+      while (v < lb) {
+        v = v + range;
       }
 
-      return val;
+      while (v >= ub) {
+        v = v - range;
+      } // console.log({v});
+
+
+      return v;
     };
   }
 };
@@ -253,6 +293,9 @@ exports.functions = void 0;
 
 var _util = require("./util");
 
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
 const _functions = {};
 _functions.add = {
   fun: args => {
@@ -276,7 +319,7 @@ _functions.sub = {
     }, args);
     return (input, gen_args, run_args) => {
       const vv = (0, _util.freeze_values)(value, run_args, gen_args);
-      return (0, _util.undefault)(input, 0) + vv;
+      return (0, _util.undefault)(input, 0) - vv;
     };
   }
 };
@@ -290,7 +333,7 @@ _functions.floor = {
     return (input, gen_args, run_args) => {
       const dv = (0, _util.freeze_values)(digits, run_args, gen_args);
       const fact = Math.pow(10, dv);
-      return Math.floor(input * fact) / fact;
+      return Math.floor((0, _util.undefault)(input, 0) * fact) / fact;
     };
   }
 };
@@ -357,7 +400,11 @@ exports.functions = void 0;
 
 var _util = require("./util");
 
-const _functions = {};
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
+const _functions = {}; // TODO: this should be locked to time/BPM boundaries
+
 _functions.sah = {
   fun: args => {
     const {
@@ -366,8 +413,8 @@ _functions.sah = {
       h: 1
     }, args);
     return (input, gen_args, run_args) => {
-      const [hv] = (0, _util.freeze_values)([hold_time], run_args, gen_args);
-      let prev_time = 0;
+      const hv = (0, _util.freeze_values)(hold_time, run_args, gen_args);
+      let prev_time = Number.MIN_SAFE_INTEGER;
 
       if (typeof gen_args.private_state.time !== 'undefined') {
         prev_time = gen_args.private_state.time;
@@ -377,7 +424,7 @@ _functions.sah = {
         gen_args.private_state.value = input;
       }
 
-      if (gen_args.values.time - prev_time >= hv) {
+      if (gen_args.values.time - prev_time >= Math.abs(hv)) {
         gen_args.private_state.value = input;
         gen_args.private_state.time = gen_args.values.time;
       }
@@ -473,6 +520,9 @@ exports.functions = void 0;
 
 var _util = require("./util");
 
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
 const _functions = {};
 _functions.speed = {
   fun: args => {
@@ -610,6 +660,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.freeze_values = exports.get_bpm = exports.get_time = exports.expand_args = exports.undefault = exports.mix_values = exports.CANARY = exports.ud = void 0;
 
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
 // eslint-disable-next-line no-empty-function
 const ud = function () {}();
 
@@ -797,6 +850,9 @@ var _general = require("./components/general");
 
 var _modifiers = require("./components/modifiers");
 
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
 const BUILTIN_FUNCTIONS = [_maths.functions, _generators.functions, _time.functions, _general.functions, _modifiers.functions].reduce((prev, ob) => {
   Object.entries(ob).forEach(([name, value]) => {
     prev[name] = value;
@@ -816,7 +872,13 @@ const get_doc = () => Object.entries(extract_property(BUILTIN_FUNCTIONS, "doc"))
 
 exports.get_doc = get_doc;
 
-const run_calls = (global_state, instance_state, calls, args) => {
+const run_calls = (options, global_state, instance_state, calls, args) => {
+  const run_options = { ...{
+      return_undef: false,
+      init_val_time: true
+    },
+    ...options
+  };
   let run_args = args;
 
   if (typeof run_args === 'undefined' || run_args.length === 0) {
@@ -839,9 +901,13 @@ const run_calls = (global_state, instance_state, calls, args) => {
     instance_state,
     private_state: {}
   };
-  gen_args.values.initial_time = (0, _util.get_time)(gen_args.values, gen_args.values);
+  gen_args.values.initial_time = (0, _util.get_time)(gen_args.values, run_args);
   gen_args.values.time = gen_args.values.initial_time;
-  gen_args.values.val = gen_args.values.time;
+
+  if (run_options.init_val_time) {
+    gen_args.values.val = gen_args.values.time;
+  }
+
   gen_args.values.get_bpm = (0, _util.get_bpm)(gen_args.values, gen_args.values);
   run_args[0] = gen_args.values;
   calls.forEach(([fncall, private_state]) => {
@@ -852,7 +918,7 @@ const run_calls = (global_state, instance_state, calls, args) => {
   });
   const rval = gen_args.values[gen_args.current_value];
 
-  if (typeof rval === 'undefined') {
+  if (typeof rval === 'undefined' && !run_options.return_undef) {
     return 0;
   }
 
@@ -867,21 +933,23 @@ const sub_call = (global_state, prev_calls, fun) => {
     calls.push([fun, {}]);
   }
 
-  const rfun = (...args) => run_calls(global_state, instance_state, calls, args);
+  const option_call = (options, args) => run_calls(options, global_state, instance_state, calls, args);
 
-  rfun.run = rfun;
+  const run_function = (...args) => option_call({}, args);
 
-  rfun.gen = () => rfun;
+  run_function.run = run_function;
 
-  rfun[_util.CANARY] = true;
+  run_function.gen = options => (...args) => option_call(options, args);
+
+  run_function[_util.CANARY] = true;
   Object.entries(extract_property(BUILTIN_FUNCTIONS, "fun")).forEach(([name, gen]) => {
-    if (name in rfun && !(name in Object.getOwnPropertyNames())) {
-      throw new Error(`${name} already exists on parents of rfun`);
+    if (name in run_function && !(name in Object.getOwnPropertyNames())) {
+      throw new Error(`${name} already exists on parents of run_function`);
     }
 
-    rfun[name] = (...args) => sub_call(global_state, calls.map(([call]) => call), gen(args));
+    run_function[name] = (...args) => sub_call(global_state, calls.map(([call]) => call), gen(args));
   });
-  return rfun;
+  return run_function;
 };
 
 const get_global_env = () => {

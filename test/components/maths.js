@@ -1,3 +1,7 @@
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
+
 /* eslint-disable max-lines-per-function */
 /* eslint-env mocha */
 "use strict";
@@ -21,6 +25,27 @@ describe('Math functions', function () {
             it(`${msg}`, function () {
                 cases.forEach(([start, value, expected], i) => {
                     const fn = L.set(ud).add(start).add(value);
+                    Array(10).fill(1).forEach(() => {
+                        assert.equal(
+                            fn.run()
+                            , expected
+                            , `case ${i + 1}`
+                        );
+                    });
+                });
+            });
+        });
+    });
+    describe('sub', function () {
+        [
+            ["should handle zero values", [0, 0, 0]]
+            , ["should handle undefined values", [ud, 5, -5], [5, ud, 5], [ud, ud, 0]]
+            , ["should handle positive values", [1, 5, -4], [5, 1, 4], [5, 0, 5], [0, 5, -5]]
+            , ["should handle negative values", [-1, -5, 4], [-5, -1, -4], [-5, 0, -5], [0, -5, 5]]
+        ].forEach(([msg, ...cases]) => {
+            it(`${msg}`, function () {
+                cases.forEach(([start, value, expected], i) => {
+                    const fn = L.set(start).sub(value);
                     Array(10).fill(1).forEach(() => {
                         assert.equal(
                             fn.run()
@@ -111,6 +136,20 @@ describe('Math functions', function () {
                 , [ud, [{d: 3}], 0]
             ].forEach(([init, parms, result], i) => {
                 assert.equal(L.set(init).floor(...parms).run(), result, `case ${i + 1}`);
+            });
+        });
+    });
+    describe('mod', function () {
+        it('works as expected', function () {
+            [
+                [13, [10], 3]
+                , [111, [0], 0]
+                , [110, [10], 0]
+                , [-13, [10], -3]
+                , [-13.5, [5], -3.5]
+            ].forEach(([start, parms, expected], i) => {
+                const v = L.set(start).mod(...parms).run();
+                assert.equal(v, expected, `case ${i + 1}: v=${v} expected=${expected}`);
             });
         });
     });

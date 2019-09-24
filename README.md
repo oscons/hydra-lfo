@@ -38,8 +38,15 @@ shape(
 // cycle through shapes every 4 seconds
 shape(
   L.slow(4) // slow down time
-  .time() // get the current time
   .choose([10, 16, 8, 20]) // use it as an index
 ).out(o0)
 ```
 
+# License
+
+```
+Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+Licensed under the GNU General Public License, Version 2.0.
+```
+
+See [LICENSE](LICENSE) file for more information.

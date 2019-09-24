@@ -1,3 +1,7 @@
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
+
 import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm} from "./util";
 
 const _functions = {};
@@ -31,13 +35,15 @@ _functions.rnd = {fun: (args) => {
 
         let svx = 1;
         if (typeof input === 'undefined') {
-            if (typeof sv !== 'undefined') {
+            if (typeof sv === 'undefined') {
+                svx = 1;
+            } else {
                 svx = sv;
             }
         } else if (typeof sv === 'undefined') {
             svx = input;
         } else {
-            svx = mix_values(svx, input, mv);
+            svx = mix_values(sv, input, mv);
         }
 
         return (Math.random() * svx) + ov;
@@ -47,7 +53,7 @@ _functions.rnd = {fun: (args) => {
 _functions.rand = _functions.rnd;
 
 _functions.range = {fun: (args) => {
-    const {u: upper, l: lower, s: step} = expand_args({u: 10, l: 0, s: 1}, args);
+    const {u: upper, l: lower, s: step} = expand_args({u: 1, l: 0, s: 0.1}, args);
 
     return (input, gen_args, run_args) => {
         const [uv, lv, sv] = freeze_values([upper, lower, step], run_args, gen_args);

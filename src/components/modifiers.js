@@ -1,14 +1,19 @@
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
+
 import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm} from "./util";
 
 const _functions = {};
 
+// TODO: this should be locked to time/BPM boundaries
 _functions.sah = {fun: (args) => {
     const {h: hold_time} = expand_args({h: 1}, args);
 
     return (input, gen_args, run_args) => {
-        const [hv] = freeze_values([hold_time], run_args, gen_args);
+        const hv = freeze_values(hold_time, run_args, gen_args);
 
-        let prev_time = 0;
+        let prev_time = Number.MIN_SAFE_INTEGER;
         if (typeof gen_args.private_state.time !== 'undefined') {
             prev_time = gen_args.private_state.time;
         }
@@ -16,7 +21,7 @@ _functions.sah = {fun: (args) => {
             gen_args.private_state.value = input;
         }
 
-        if ((gen_args.values.time - prev_time) >= hv) {
+        if ((gen_args.values.time - prev_time) >= Math.abs(hv)) {
             gen_args.private_state.value = input;
             gen_args.private_state.time = gen_args.values.time;
         }

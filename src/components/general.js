@@ -1,3 +1,7 @@
+/* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
+ * Licensed under the GNU General Public License, Version 2.0.
+ * See LICENSE file for more information */
+
 import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm} from "./util";
 
 const _functions = {};

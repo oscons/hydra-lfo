@@ -16,7 +16,9 @@ module.exports = function (api) {
     };
 
     if (env.indexOf(":mini") > -1) {
-        config.presets.push(["minify"]);
+        config.presets.push([
+            "minify"
+        ]);
     }
     if (env.indexOf("test") > -1 || env.indexOf("coverage") > -1) {
         config.plugins.push(["istanbul"]);
