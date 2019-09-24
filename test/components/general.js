@@ -42,23 +42,57 @@ describe('General functions', function () {
     describe('set', function () {
         [
             ["should handle zero values", [0, 0, 0]]
-            , ["should handle undefined values", [ud, 5, 5], [5, ud, 0], [ud, ud, 0]]
+            , ["should handle undefined values"
+                , [ud, 5, 5]
+                , [5, [], 0]
+                , [ud, [], 0]
+                , [5, [ud], ud]
+                , [ud, [ud], ud]
+                , [5, {}, 0]
+                , [ud, {}, 0]
+                , [5, {v: ud}, ud]
+                , [ud, {v: ud}, ud]
+            ]
             , ["should handle positive values", [1, 5, 5], [5, 1, 1], [5, 0, 0], [0, 5, 5]]
             , ["should handle negative values", [-1, -5, -5], [-5, -1, -1], [-5, 0, 0], [0, -5, -5]]
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
                 cases.forEach(([start, value, expected], i) => {
-                    const fn = L.set(start).set(value);
+                    let param = value;
+                    if (!Array.isArray(param)) {
+                        param = [param];
+                    }
+                    const fn = L.set(start).set(...param).gen({return_undef: true});
                     Array(10).fill(1).forEach(() => {
+                        const v = fn();
                         assert.equal(
-                            fn.run()
+                            v
                             , expected
-                            , `case ${i + 1}`
+                            , `case ${i + 1}: v=${v} expected=${expected} start=${start}, value=${value}`
                         );
                     });
                 });
             });
         });
+
+        it("can set different values", function () {
+            assert.equal(L.set(5, "test").get("test").run(), 5);
+            assert.equal(L.set(5, "time").time().run(), 5);
+            assert.equal(L.set(5, "test").run({time: 3}), 3);
+            assert.equal(L.set(5, "test").set(10).run({time: 3}), 10);
+            
+
+            assert.equal(
+                L.use("time").set(10)
+                    .add(
+                        L.use("time").mul(2).use().set(0)
+                    )
+                    .run({time: 100})
+                , 10
+            );
+
+        });
+
     });
     describe('noop', function () {
         it("should not modify anything", function () {
@@ -83,6 +117,19 @@ describe('General functions', function () {
             
             assert.equal(genf(), 10);
             assert.equal(genf({time: 200}), 10);
+        });
+        it("should allow undef return", function () {
+            let genf = L.set(ud).gen({return_undef: true});
+            assert.equal(typeof genf, 'function');
+            
+            assert.equal(typeof genf(), 'undefined');
+            assert.equal(typeof genf({time: 200}), 'undefined');
+
+            genf = L.set(ud).gen({return_undef: false});
+            assert.equal(typeof genf, 'function');
+            
+            assert.equal(genf(), 0);
+            assert.equal(genf({time: 200}), 0);
         });
     });
     

@@ -2,7 +2,7 @@ import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm
 
 const _functions = {};
 
-_functions.sah = (args) => {
+_functions.sah = {fun: (args) => {
     const {h: hold_time} = expand_args({h: 1}, args);
 
     return (input, gen_args, run_args) => {
@@ -23,14 +23,14 @@ _functions.sah = (args) => {
         
         return gen_args.private_state.value;
     };
-};
+}};
 
 const DEFAULT_SLEW_TYPE = 'h';
 const SLEW_TYPES = {
     h: (x, over) => x - over
 };
 
-_functions.slew = (args) => {
+_functions.slew = {fun: (args) => {
     const {r: rate, t: type, i: ival} = expand_args({r: 0.5, t: DEFAULT_SLEW_TYPE, i: 1}, args);
 
     return (input, gen_args, run_args) => {
@@ -79,12 +79,12 @@ _functions.slew = (args) => {
         gen_args.private_state.prev = nv;
         return nv;
     };
-};
+}};
 
-_functions.map = (args) => {
+_functions.map = {fun: (args) => {
     const {f: func} = expand_args({f: (x) => x}, args);
 
     return (value, gen_args, run_args) => func(value, gen_args, ...run_args);
-};
+}};
 
 export const functions = _functions;

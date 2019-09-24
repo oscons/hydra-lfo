@@ -2,7 +2,28 @@ import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm
 
 const _functions = {};
 
-_functions.rnd = (args) => {
+const TAU = 2 * Math.PI;
+
+// TODO: use LUTs
+_functions.sin = {fun: (args) => {
+    const {f: frequency, s: scale, o: offset} = expand_args({f: 1, s: 1, o: 0}, args);
+
+    return (input, gen_args, run_args) => {
+        const [fv, sv, ov] = freeze_values([frequency, scale, offset], run_args, gen_args);
+        let time = 0;
+
+        if (typeof input === 'undefined') {
+            time = get_time(gen_args, run_args, true);
+        } else {
+            time = input;
+        }
+        time = undefault(time, 0.25);
+
+        return (((Math.sin(time * TAU * fv) / 2) + 0.5) * sv) + ov;
+    };
+}};
+
+_functions.rnd = {fun: (args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: ud, o: 0, m: 0}, args);
 
     return (input, gen_args, run_args) => {
@@ -21,69 +42,52 @@ _functions.rnd = (args) => {
 
         return (Math.random() * svx) + ov;
     };
-};
+}};
 
 _functions.rand = _functions.rnd;
 
-_functions.range = (args) => {
+_functions.range = {fun: (args) => {
     const {u: upper, l: lower, s: step} = expand_args({u: 10, l: 0, s: 1}, args);
 
     return (input, gen_args, run_args) => {
-        const [sv, uv, lv] = freeze_values([step, upper, lower], run_args, gen_args);
+        const [uv, lv, sv] = freeze_values([upper, lower, step], run_args, gen_args);
         
-        let npi = 0;
-        if (gen_args.private_state.prev) {
-            const {spi = 0} = gen_args.private_state.prev;
-
-            npi = spi + sv + input;
-
-            if (npi >= uv) {
-                npi = lv;
-            }
-
-            if (npi < lv && sv < 0) {
-                npi = uv;
-            }
-        } else if (sv > 0) {
-            npi = lv;
-        } else {
-            npi = uv;
+        let idx = input;
+        if (typeof idx === 'undefined') {
+            idx = get_time(gen_args, run_args);
         }
 
-        gen_args.private_state.prev = {spi: npi};
+        let ub = uv;
+        let lb = lv;
 
-        return npi;
+        // console.log({t: run_args[0].time, input, idx, ub, lb, sv});
+        if (ub < lb) {
+            const tmp = lb;
+            lb = ub;
+            ub = tmp;
+        } else if (ub === lb) {
+            return ub;
+        } else if (sv === 0 || idx === 0) {
+            return lb;
+        }
+
+        const range = ub - lb;
+        let v = (sv * idx) + lb;
+        // console.log({v, sv, idx, lb, range});
+
+        // TODO: test if this can be replaced by "mod" (likely can)
+        while (v < lb) {
+            v = v + range;
+        }
+        while (v >= ub) {
+            v = v - range;
+        }
+        // console.log({v});
+        return v;
     };
-};
+}};
 
-_functions.iter = (args) => {
-    const {v: values, s: step} = expand_args({v: [0, 1], s: 1}, args);
-
-    return (input, gen_args, run_args) => {
-        const [vv, sv] = freeze_values([values, step], run_args, gen_args);
-
-        let {pi = 0} = gen_args.private_state.prev ? gen_args.private_state.prev : {};
-
-        if (gen_args.private_state.prev) {
-            pi = sv + pi + undefault(input, 0);
-        }
-        gen_args.private_state.prev = {pi};
-
-        const vs = vv;
-        let idx = Math.floor(pi);
-
-        idx = idx % vs.length;
-
-        const val = vs[idx];
-
-        if (typeof val === 'function') {
-            return val(input, gen_args, run_args);
-        }
-        return val;
-    };
-};
-
-_functions.choose = (args) => {
+_functions.choose = {fun: (args) => {
     const {v: values, s: scale} = expand_args({v: [0, 1], s: 1}, args);
 
     return (input, gen_args, run_args) => {
@@ -119,6 +123,6 @@ _functions.choose = (args) => {
         }
         return val;
     };
-};
+}};
 
 export const functions = _functions;

@@ -40,12 +40,25 @@ describe('Mofifier functions', function () {
                 , [{s: 1, i: 1, t: 'h'}, 0, 1000, 0.5]
             ].forEach(([parms, start, cnt, stepsz], cknum) => {
                 p.x = start;
-                const fnx = L.set(0).add(() => p.x).slew(parms).gen();
+                const fnx = L
+                    .set(0)
+                    .add(() => p.x)
+                    .slew(parms)
+                    .gen();
 
-                Array(Math.floor(cnt / stepsz)).fill(1).forEach((_, i) => {
-                    v = fnx({time: time++});
-                    assert.equal(v, start + ((i) * stepsz), `${cknum}: start=${start} tgt=${cnt} i=${i} v=${v}`);
-                });
+                // call once to init
+                assert.equal(fnx({time: time++}), start);
+
+                Array(Math.floor(cnt / stepsz)).fill(1)
+                    .forEach((_, i) => {
+                        p.x = cnt;
+                        v = fnx({time: time++});
+                        assert.equal(
+                            v
+                            , start + ((i+1) * stepsz)
+                            , `check ${cknum + 1}: start=${start} tgt=${cnt} i=${i} v=${v}`
+                        );
+                    });
             });
 
         });

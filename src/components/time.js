@@ -2,7 +2,7 @@ import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm
 
 const _functions = {};
 
-_functions.speed = (args) => {
+_functions.speed = {fun: (args) => {
     const {v: value, m: mix} = expand_args({v: ud, m: ud}, args);
 
     return (input, gen_args, run_args) => {
@@ -25,9 +25,9 @@ _functions.speed = (args) => {
 
         return input;
     };
-};
+}};
 
-_functions.fast = (args) => {
+_functions.fast = {fun: (args) => {
     const {s: scale, o: offset, m: mix} = expand_args({s: ud, o: 0, m: 0}, args);
     return (input, gen_args, run_args) => {
         const [sv, ov, mv] = freeze_values([scale, offset, mix], run_args, gen_args);
@@ -47,9 +47,9 @@ _functions.fast = (args) => {
         
         return input;
     };
-};
+}};
 
-_functions.time = (args) => {
+_functions.time = {fun: (args) => {
     const {s: scale, o: offset} = expand_args({s: 1, o: 0}, args);
 
     return (input, gen_args, run_args) => {
@@ -57,9 +57,9 @@ _functions.time = (args) => {
 
         return (get_time(gen_args, run_args) * sv) + ov;
     };
-};
+}};
 
-_functions.beats = (args) => {
+_functions.beats = {fun: (args) => {
     const {s: scale, b: sbpm} = expand_args({s: 1, b: ud}, args);
 
     return (input, gen_args, run_args) => {
@@ -75,9 +75,9 @@ _functions.beats = (args) => {
 
         return input;
     };
-};
+}};
 
-_functions.sec = (args) => {
+_functions.sec = {fun: (args) => {
     const {s: scale, b: sbpm} = expand_args({s: 1, b: ud}, args);
 
     return (input, gen_args, run_args) => {
@@ -94,6 +94,6 @@ _functions.sec = (args) => {
 
         return input;
     };
-};
+}};
 
 export const functions = _functions;

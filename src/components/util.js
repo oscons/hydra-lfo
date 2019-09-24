@@ -5,12 +5,7 @@ export const CANARY = "__hydralfo_func";
 
 export const mix_values = (a, b, m) => (m === 0 ? a : (m === 1 ? b : (a * (1 - m)) + (b * m)));
 
-export const undefault = (x, def) => {
-    if (typeof x === 'undefined') {
-        return def;
-    }
-    return x;
-};
+export const undefault = (x, def) => (typeof x === 'undefined' ? def : x);
 
 export const expand_args = (arg_def, args) => {
     const vals = {...undefault(arg_def, {})};

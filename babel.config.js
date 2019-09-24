@@ -6,7 +6,7 @@ module.exports = function (api) {
     const config = {
         presets: [
             ["@babel/preset-env", {
-                targets: "> 0.25%, not dead"
+                targets: "> 10%, not dead"
                 , modules: "cjs"
             }]
         ]

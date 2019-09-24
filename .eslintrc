@@ -48,6 +48,7 @@
             }
         ]
         , "consistent-this": [ "error", "that"]
+        , "max-depth": ["warn", 8]
 
         , "sort-imports": "off"
         , "multiline-comment-style": "off"

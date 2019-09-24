@@ -13,9 +13,31 @@ const BUILTIN_FUNCTIONS = [
     , time_functions
     , general_functions
     , modifier_functions
-];
+].reduce((prev, ob) => {
+    Object.entries(ob).forEach(([name, value]) => {
+        prev[name] = value;
+    });
+    return prev;
+}, {});
 
-const run_calls = (global_state, instance_state, calls, args) => {
+const extract_property = (arr, prop) => Object.entries(arr)
+    .map(([name, value]) => [name, value[prop]])
+    .reduce((prev, [name, value]) => {
+        prev[name] = value;
+        return prev;
+    }, {});
+
+export const get_doc = () => Object.entries(extract_property(BUILTIN_FUNCTIONS, "doc"))
+    .filter(([, doc]) => typeof doc !== 'undefined')
+    .reduce((prev, [name, doc]) => {
+        [prev[name]] = doc;
+        return prev;
+    }, {});
+
+const run_calls = (options, global_state, instance_state, calls, args) => {
+
+    const run_options = {...{return_undef: false, init_val_time: true}, ...options};
+
     let run_args = args;
     if (typeof run_args === 'undefined' || run_args.length === 0) {
         run_args = [{}];
@@ -37,9 +59,11 @@ const run_calls = (global_state, instance_state, calls, args) => {
         , private_state: {}
     };
 
-    gen_args.values.initial_time = get_time(gen_args.values, gen_args.values);
+    gen_args.values.initial_time = get_time(gen_args.values, run_args);
     gen_args.values.time = gen_args.values.initial_time;
-    gen_args.values.val = gen_args.values.time;
+    if (run_options.init_val_time) {
+        gen_args.values.val = gen_args.values.time;
+    }
     gen_args.values.get_bpm = get_bpm(gen_args.values, gen_args.values);
 
     run_args[0] = gen_args.values;
@@ -54,7 +78,7 @@ const run_calls = (global_state, instance_state, calls, args) => {
     });
     
     const rval = gen_args.values[gen_args.current_value];
-    if (typeof rval === 'undefined') {
+    if (typeof rval === 'undefined' && !run_options.return_undef) {
         return 0;
     }
 
@@ -69,26 +93,27 @@ const sub_call = (global_state, prev_calls, fun) => {
         calls.push([fun, {}]);
     }
 
-    const rfun = (...args) => run_calls(global_state, instance_state, calls, args);
-    rfun.run = rfun;
-    rfun.gen = () => rfun;
-    rfun[CANARY] = true;
+    const option_call = (options, args) => run_calls(options, global_state, instance_state, calls, args);
 
-    BUILTIN_FUNCTIONS.forEach((functions) => {
-        Object.entries(functions).forEach(([name, gen]) => {
-            if (name in rfun && !(name in Object.getOwnPropertyNames())) {
-                throw new Error(`${name} already exists on parents of rfun`);
+    const run_function = (...args) => option_call({}, args);
+    run_function.run = run_function;
+    run_function.gen = (options) => (...args) => option_call(options, args);
+    run_function[CANARY] = true;
+
+    Object.entries(extract_property(BUILTIN_FUNCTIONS, "fun"))
+        .forEach(([name, gen]) => {
+            if (name in run_function && !(name in Object.getOwnPropertyNames())) {
+                throw new Error(`${name} already exists on parents of run_function`);
             }
 
-            rfun[name] = (...args) => sub_call(
+            run_function[name] = (...args) => sub_call(
                 global_state
                 , calls.map(([call]) => call)
                 , gen(args)
             );
         });
-    });
 
-    return rfun;
+    return run_function;
 };
 
 const get_global_env = () => {
@@ -102,10 +127,10 @@ const make_new_lfo = (state) => {
     const fdef = {};
     const global_state = typeof state === 'undefined' ? {} : state;
     
-    BUILTIN_FUNCTIONS.forEach((functions) => {
-        Object.keys(functions).forEach((name) => {
-            fdef[name] = (...args) => sub_call(global_state, [])[name](...args);
-        });
+    const functions = extract_property(BUILTIN_FUNCTIONS, "fun");
+
+    Object.keys(functions).forEach((name) => {
+        fdef[name] = (...args) => sub_call(global_state, [])[name](...args);
     });
 
     fdef.__release = (new_lfo) => {

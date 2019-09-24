@@ -13,7 +13,7 @@
     "build_normal": "browserify --standalone 'hydralfo' --debug -t babelify src/*.js | exorcist build/hydralfo.js.map > build/hydralfo.js",
     "build_mini": "browserify --standalone 'hydralfo' --debug -t [ babelify --envName 'build:mini' ] src/*.js | exorcist build/hydralfo.min.js.map > build/hydralfo.min.js",
     "clean": "rimraf dist/*.js build/*",
-    "coverage": "cross-env NODE_ENV=test nyc mocha",
+    "coverage": "cross-env NODE_ENV=test nyc mocha --recursive test",
     "test": "mocha --recursive test"
   },
   "author": "oscons",
@@ -24,7 +24,7 @@
       "@babel/register"
     ],
     "include": [
-      "src/hydralfo.js"
+      "src/**/*.js"
     ],
     "reporter": [
       "text",
@@ -47,7 +47,7 @@
     "@istanbuljs/nyc-config-babel": "^2.1.1",
     "@types/assert": "^1.4.3",
     "babel-plugin-istanbul": "^5.2.0",
-    "babel-preset-minify": "^0.5.1",
+    "babel-preset-minify": "=0.4.3",
     "babelify": "^10.0.0",
     "browserify": "^16.5.0",
     "copyfiles": "^2.1.1",
