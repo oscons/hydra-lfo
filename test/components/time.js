@@ -74,4 +74,50 @@ describe('Time functions', function () {
             });
         });
     });
+    ["slow", "fast"].forEach((fun) => {
+        describe(fun, function () {
+            it("does what it should", function () {
+                [
+                    [0, [], [2, 0, 2], [0, 0, 0]]
+                    , [ud, [0], [2, 0, 2], [0, 0, 0]]
+                    
+                    , [ud, [], [2, 2, 2], [0, 0, 0]]
+                    , [ud, [{}], [2, 2, 2], [0, 0, 0]]
+                    , [2, [], [2, 4, 1], [0, 0, 0], [1, 2, 0.5]]
+                    , [2, [{}], [2, 4, 1], [0, 0, 0], [1, 2, 0.5]]
+
+                    , [ud, [4], [2, 8, 0.5], [0, 0, 0]]
+                    , [ud, [{s: 4}], [2, 8, 0.5], [0, 0, 0]]
+                    , [2, [4], [2, 8, 0.5], [0, 0, 0], [1, 4, 0.25]]
+                    , [2, [{s: 4}], [2, 8, 0.5], [0, 0, 0], [1, 4, 0.25]]
+
+                    , [2, [2, 2], [2, 6, 3], [0, 2, 2], [1, 4, 2.5]]
+                    , [2, [{s: 2, o: 2}], [2, 6, 3], [0, 2, 2], [1, 4, 2.5]]
+
+                    , [2, [3, 1, 0.5], [
+                        2
+                        , (2 *      (2 + 3) / 2)  + 1
+                        , (2 * 1 / ((2 + 3) / 2)) + 1]
+                    ]
+                    , [2, [{s: 3, o: 1, m: 0.5}], [
+                        2
+                        , (2 *      (2 + 3) / 2)  + 1
+                        , (2 * 1 / ((2 + 3) / 2)) + 1]
+                    ]
+
+                ].forEach(([init, params, ...runs], i) => {
+                    const fn = L.set(init)[fun](...params);
+
+                    runs.forEach(([time, fast_res, slow_res], j) => {
+                        
+                        const fexpected = fun === 'slow' ? slow_res : fast_res;
+                        const v = fn.time().run({time});
+                        const v2 = fn.gen({return_undef: true})({time});
+                        assert.equal(v2, init);
+                        assert.equal(v, fexpected, `case ${i + 1}, run ${j + 1}: r=${v} expected=${fexpected} i=${init} t=${time} s=${slow_res} f=${fast_res}`);
+                    });
+                });
+            });
+        });
+    });
 });
