@@ -49,7 +49,7 @@
         ]
         , "consistent-this": [ "error", "that"]
 
-        
+        , "sort-imports": "off"
         , "multiline-comment-style": "off"
         , "no-nested-ternary": "off"
         , "newline-per-chained-call": "off"

@@ -14,7 +14,7 @@
     "build_mini": "browserify --standalone 'hydralfo' --debug -t [ babelify --envName 'build:mini' ] src/*.js | exorcist build/hydralfo.min.js.map > build/hydralfo.min.js",
     "clean": "rimraf dist/*.js build/*",
     "coverage": "cross-env NODE_ENV=test nyc mocha",
-    "test": "mocha"
+    "test": "mocha --recursive test"
   },
   "author": "oscons",
   "license": "GPL-2.0-or-later",

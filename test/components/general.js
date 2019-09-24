@@ -4,7 +4,7 @@
 
 const assert = require('assert');
 const rewire = require("rewire");
-const hydralfo = rewire("../src/hydralfo");
+const hydralfo = rewire("../../src/hydralfo");
 const L = hydralfo.init();
 
 // eslint-disable-next-line no-empty-function
@@ -77,20 +77,13 @@ describe('General functions', function () {
         });
     });
     describe('gen', function () {
-        it("should not modify anything", function () {
-            assert.equal(L.set(10).gen().run(), 10);
-            assert.equal(L.set(10).gen(ud).run(), 10);
-            assert.equal(L.set(10).gen({}).run(), 10);
-            assert.equal(L.set(10).gen({v: 100}).run(), 10);
-            assert.equal(L.set(10).gen({time: 100}).run(), 10);
-
-            assert.equal(L.set(10).gen().run({time: 200}), 10);
-            assert.equal(L.set(10).gen(ud).run({time: 200}), 10);
-            assert.equal(L.set(10).gen({}).run({time: 200}), 10);
-            assert.equal(L.set(10).gen({v: 100}).run({time: 200}), 10);
-            assert.equal(L.set(10).gen({time: 100}).run({time: 200}), 10);
-
+        it("should return the function chain", function () {
+            const genf = L.set(10).gen();
+            assert.equal(typeof genf, 'function');
+            
+            assert.equal(genf(), 10);
+            assert.equal(genf({time: 200}), 10);
         });
     });
-
+    
 });

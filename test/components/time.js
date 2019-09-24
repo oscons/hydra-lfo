@@ -4,7 +4,7 @@
 
 const assert = require('assert');
 const rewire = require("rewire");
-const hydralfo = rewire("../src/hydralfo");
+const hydralfo = rewire("../../src/hydralfo");
 const L = hydralfo.init();
 
 // eslint-disable-next-line no-empty-function

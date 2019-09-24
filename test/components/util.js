@@ -4,8 +4,10 @@
 
 const assert = require('assert');
 const rewire = require("rewire");
-const hydralfo = rewire("../src/hydralfo");
+const hydralfo = rewire("../../src/hydralfo");
 const L = hydralfo.init();
+
+const utils = rewire("../../src/components/util");
 
 // eslint-disable-next-line no-empty-function
 const ud = ((function () {})());
@@ -13,7 +15,7 @@ const ud = ((function () {})());
 describe("Utilities ", function () {
     describe("mix_values", function () {
         it("works as expected", function () {
-            const mix_values = hydralfo.__get__("mix_values");
+            const {mix_values} = utils;
             assert.equal(mix_values(1, 10, 0), 1);
             assert.equal(mix_values(10, 1, 0), 10);
 
@@ -30,7 +32,7 @@ describe("Utilities ", function () {
 
     describe("undefault", function () {
         it("works as expected", function () {
-            const undefault = hydralfo.__get__("undefault");
+            const {undefault} = utils;
             assert.equal(undefault(ud, 10), 10);
             assert.equal(undefault(ud, "foo"), "foo");
             assert.equal(typeof undefault(ud, ud), 'undefined');
@@ -41,7 +43,7 @@ describe("Utilities ", function () {
 
     describe("get_time", function () {
         it("works as expected", function () {
-            const get_time = hydralfo.__get__("get_time");
+            const {get_time} = utils;
             assert.notEqual(get_time(), 0);
             assert.notEqual(get_time({}, {foo: 1}), 0);
             assert.notEqual(get_time({}, {foo: 1}), 1);
@@ -57,7 +59,7 @@ describe("Utilities ", function () {
 
     describe("freeze_values", function () {
         it("works as expected", function () {
-            const freeze_values = hydralfo.__get__("freeze_values");
+            const {freeze_values} = utils;
             const frozen = freeze_values([
                 (...args) => args[0]
                 , (...args) => args[1]
@@ -78,7 +80,7 @@ describe("Utilities ", function () {
 
     describe("expand_args", function () {
         it("Can parse args", function () {
-            const expand_args = hydralfo.__get__("expand_args");
+            const {expand_args} = utils;
             let xa = {};
             
             xa = expand_args({a: 1, b: ud}, [{a: 2}]);

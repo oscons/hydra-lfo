@@ -4,7 +4,7 @@
 
 const assert = require('assert');
 const rewire = require("rewire");
-const hydralfo = rewire("../src/hydralfo");
+const hydralfo = rewire("../../src/hydralfo");
 const L = hydralfo.init();
 
 // eslint-disable-next-line no-empty-function
@@ -20,7 +20,7 @@ describe('Math functions', function () {
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
                 cases.forEach(([start, value, expected], i) => {
-                    const fn = L.add(start).add(value);
+                    const fn = L.set(ud).add(start).add(value);
                     Array(10).fill(1).forEach(() => {
                         assert.equal(
                             fn.run()
@@ -42,7 +42,7 @@ describe('Math functions', function () {
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
                 cases.forEach(([start, value, expected], i) => {
-                    const fn = L.add(start).mul(value);
+                    const fn = L.set(ud).add(start).mul(value);
                     Array(10).fill(1).forEach(() => {
                         assert.equal(
                             fn.run()
@@ -64,7 +64,7 @@ describe('Math functions', function () {
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
                 cases.forEach(([start, value, expected], i) => {
-                    const fn = L.add(start).div(value);
+                    const fn = L.set(ud).add(start).div(value);
                     Array(10).fill(1).forEach(() => {
                         assert.equal(
                             fn.run()
@@ -77,7 +77,7 @@ describe('Math functions', function () {
         });
         it("should handle div by zero gracefully", function () {
             [[0, 0], [1, 0], [-1, 0]].forEach(([start, value], i) => {
-                const fn = L.add(start).div(value);
+                const fn = L.set(ud).add(start).div(value);
                 Array(10).fill(1).forEach((_, n) => {
                     const ret = fn.run();
                     assert.equal(typeof ret, 'number', `case ${i + 1}, iteration ${n}`);
@@ -92,7 +92,7 @@ describe('Math functions', function () {
             });
         });
     });
-    describe('floot', function () {
+    describe('floor', function () {
         it('rounds down to specified precision', function () {
             [
                 [5.55555, [], 5]

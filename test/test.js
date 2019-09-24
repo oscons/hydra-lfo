@@ -86,6 +86,11 @@ describe('Overall', function () {
             assert.equal(typeof run_parms[3], 'function');
         });
     });
-
+    describe("initial value", function () {
+        it("is same as time", function () {
+            assert.equal(L.noop().run({time: 123}), 123);
+            assert.notEqual(L.noop().run(), 123);
+        });
+    });
 });
 
