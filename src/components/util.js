@@ -2,6 +2,8 @@
  * Licensed under the GNU General Public License, Version 2.0.
  * See LICENSE file for more information */
 
+ const UUID = require("pure-uuid");
+
 // eslint-disable-next-line no-empty-function
 export const ud = ((function () {})());
 
@@ -65,9 +67,9 @@ export const expand_args = (arg_def, args) => {
                 return undefault(vx(input, call_gen_args, nargs), ax);
             };
         } else if (typeof vx === 'undefined') {
-            vals[x] = () => ax;
+            vals[x] = ax;
         } else {
-            vals[x] = () => vx;
+            vals[x] = vx;
         }
     });
 
@@ -141,3 +143,12 @@ export const freeze_values = (v, args, gen_args) => {
     }
     return v;
 };
+
+export const get_global_env = () => {
+    if (typeof window !== 'undefined') {
+        return window;
+    }
+    return global;
+};
+
+export const uuid = () => new UUID(4).format();

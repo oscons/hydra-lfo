@@ -2,13 +2,14 @@
  * Licensed under the GNU General Public License, Version 2.0.
  * See LICENSE file for more information */
 
-import {ud, CANARY, get_time, get_bpm} from "./components/util";
+import {ud, CANARY, get_time, get_bpm, undefault, get_global_env} from "./components/util";
 
 import {functions as maths_functions} from './components/maths';
 import {functions as generator_functions} from './components/generators';
 import {functions as time_functions} from './components/time';
 import {functions as general_functions} from './components/general';
 import {functions as modifier_functions} from './components/modifiers';
+import {functions as async_functions} from './components/async';
 
 const BUILTIN_FUNCTIONS = [
     maths_functions
@@ -16,6 +17,7 @@ const BUILTIN_FUNCTIONS = [
     , time_functions
     , general_functions
     , modifier_functions
+    , async_functions
 ].reduce((prev, ob) => {
     Object.entries(ob).forEach(([name, value]) => {
         prev[name] = value;
@@ -39,7 +41,7 @@ export const get_doc = () => Object.entries(extract_property(BUILTIN_FUNCTIONS, 
 
 const run_calls = (options, global_state, instance_state, calls, args) => {
 
-    const run_options = {...{return_undef: false, init_val_time: true}, ...options};
+    const run_options = {...{return_undef: false}, ...options};
 
     let run_args = args;
     if (typeof run_args === 'undefined' || run_args.length === 0) {
@@ -64,9 +66,7 @@ const run_calls = (options, global_state, instance_state, calls, args) => {
 
     gen_args.values.initial_time = get_time(gen_args.values, run_args);
     gen_args.values.time = gen_args.values.initial_time;
-    if (run_options.init_val_time) {
-        gen_args.values.val = gen_args.values.time;
-    }
+
     gen_args.values.get_bpm = get_bpm(gen_args.values, gen_args.values);
 
     run_args[0] = gen_args.values;
@@ -82,7 +82,7 @@ const run_calls = (options, global_state, instance_state, calls, args) => {
     
     const rval = gen_args.values[gen_args.current_value];
     if (typeof rval === 'undefined' && !run_options.return_undef) {
-        return 0;
+        return undefault(gen_args.values.time, 0);
     }
 
     return rval;
@@ -119,17 +119,12 @@ const sub_call = (global_state, prev_calls, fun) => {
     return run_function;
 };
 
-const get_global_env = () => {
-    if (typeof window !== 'undefined') {
-        return window;
-    }
-    return global;
-};
-
 const make_new_lfo = (state) => {
     const fdef = {};
-    const global_state = typeof state === 'undefined' ? {} : state;
+    const global_state = undefault(state, {});
     
+    global_state.cleanup = [];
+
     const functions = extract_property(BUILTIN_FUNCTIONS, "fun");
 
     Object.keys(functions).forEach((name) => {
@@ -137,7 +132,9 @@ const make_new_lfo = (state) => {
     });
 
     fdef.__release = (new_lfo) => {
-        // for future use, e.g. to stop timeouts etc
+        global_state.cleanup.forEach((cfn) => {
+            cfn(global_state, new_lfo);
+        });
     };
 
     return fdef;
@@ -145,7 +142,8 @@ const make_new_lfo = (state) => {
 
 const GLOBAL_INIT_ID = "__hydralfo_global";
 
-export const init = (state = ud, init_global = true, force = false) => {
+export const init = (args) => {
+    const {state = ud, init_global = true, force = false} = undefault(args, {});
     const new_lfo = make_new_lfo(state);
 
     if (!init_global) {
@@ -158,11 +156,11 @@ export const init = (state = ud, init_global = true, force = false) => {
         if (GLOBAL_INIT_ID in env) {
             const old_lfo = env[GLOBAL_INIT_ID];
             if (typeof old_lfo === 'object') {
-                if (!force) {
-                    return env[GLOBAL_INIT_ID];
-                }
                 if ('__release' in old_lfo) {
                     old_lfo.__release(new_lfo);
+                }
+                if (!force) {
+                    return old_lfo;
                 }
             }
         }

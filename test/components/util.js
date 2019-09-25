@@ -90,37 +90,36 @@ describe("Utilities ", function () {
             xa = expand_args({a: 1, b: ud}, [{a: 2}]);
 
             assert.equal(typeof xa, "object");
-            assert.equal(typeof xa.a, 'function');
-            assert.equal(xa.a(), 2);
+            assert.equal(typeof xa.a, 'number');
+            assert.equal(xa.a, 2);
 
-            assert.equal(typeof xa.b, 'function');
-            assert.equal(typeof xa.b(), 'undefined');
+            assert.equal(typeof xa.b, 'undefined');
 
             xa = expand_args({f: 1, s: 1, o: 0}, ud);
 
             assert.equal(typeof xa, "object");
-            assert.equal(typeof xa.f, 'function');
-            assert.equal(typeof xa.s, 'function');
-            assert.equal(typeof xa.o, 'function');
-            assert.equal(xa.f(), 1);
-            assert.equal(xa.s(), 1);
-            assert.equal(xa.o(), 0);
+            assert.equal(typeof xa.f, 'number');
+            assert.equal(typeof xa.s, 'number');
+            assert.equal(typeof xa.o, 'number');
+            assert.equal(xa.f, 1);
+            assert.equal(xa.s, 1);
+            assert.equal(xa.o, 0);
 
             xa = expand_args({a: 1}, [2]);
 
             assert.equal(typeof xa, "object");
-            assert.equal(typeof xa.a, 'function');
-            assert.equal(xa.a(), 2);
+            assert.equal(typeof xa.a, 'number');
+            assert.equal(xa.a, 2);
 
             xa = expand_args({a: 1, b: ud}, [[3, 2, 1], 4]);
 
             assert.equal(typeof xa, "object");
-            assert.equal(typeof xa.a(), 'object');
-            assert.equal(Array.isArray(xa.a()), true);
-            assert.equal(xa.a().length, 3);
-            assert.deepEqual(xa.a(), [3, 2, 1]);
-            assert.equal(typeof xa.b(), 'number');
-            assert.equal(xa.b(), 4);
+            assert.equal(typeof xa.a, 'object');
+            assert.equal(Array.isArray(xa.a), true);
+            assert.equal(xa.a.length, 3);
+            assert.deepEqual(xa.a, [3, 2, 1]);
+            assert.equal(typeof xa.b, 'number');
+            assert.equal(xa.b, 4);
 
             let fn1 = () => 3;
             xa = expand_args({a: 1}, [{a: fn1}]);
@@ -136,6 +135,25 @@ describe("Utilities ", function () {
             assert.equal(typeof xa.a, 'function');
             assert.equal(xa.a(), 3);
 
+        });
+    });
+    describe("uuid", function () {
+        it("is reasonably random", function () {
+            const {uuid} = utils;
+            const res = Array(1000).fill(1)
+                .map(() => uuid())
+                .reduce((prev, curr) => {
+                    const [hs] = prev;
+                    if (typeof hs[curr] === 'undefined') {
+                        hs[curr] = 0;
+                    }
+                    hs[curr]++;
+                    return prev;
+                }, [{}])
+                .map((x) => Object.entries(x))
+                .flat(1)
+                .filter(([, cnt]) => cnt > 1);
+            assert.equal(res.length < 2, true, `Total collisions: ${res.reduce((x, [, cnt]) => x + cnt, 0)}`);
         });
     });
 });

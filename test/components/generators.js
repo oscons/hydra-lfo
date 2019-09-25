@@ -43,7 +43,7 @@ describe('Generators', function () {
             [
                 [0, [[3, 2, 1]], 3]
                 , [0, [[]], 0]
-                , [ud, [[3, 2, 1]], 3]
+                , [ud, [[3, 2, 1]], 1]
                 , [1, [[3, 2, 1]], 2]
                 , [1, [{v: [3, 2, 1]}], 2]
                 , [1, [{v: [3, 2, 1], s: 2}], 1]
@@ -55,10 +55,14 @@ describe('Generators', function () {
                 , [-1, [{v: [3, 2, () => 4], s: 2}], 4]
 
             ].forEach(([init, parms, result], i) => {
-                const ret = L.set(init).choose(...parms).run();
+                const ret = L.set(init).choose(...parms).run({time: 5});
 
                 assert.equal(ret, result, `case ${i + 1}: ${ret} != ${result}`);
             });
+        });
+        it("uses time as default input", function () {
+            assert.equal(L.fast(2).choose([3, 2, 1, 0]).run({time: 1}), 1);
+            assert.equal(L.slow(2).choose([3, 2, 1, 0]).run({time: 4}), 1);
         });
     });
     describe('sin', function () {

@@ -88,9 +88,7 @@ describe('General functions', function () {
 
             assert.equal(
                 L.use("time").set(10)
-                    .add(
-                        L.use("time").mul(2).use().set(0)
-                    )
+                    .add(L.use("time").mul(2).use().set(0))
                     .run({time: 100})
                 , 10
             );
@@ -132,8 +130,9 @@ describe('General functions', function () {
             genf = L.set(ud).gen({return_undef: false});
             assert.equal(typeof genf, 'function');
             
-            assert.equal(genf(), 0);
-            assert.equal(genf({time: 200}), 0);
+            assert.equal(genf() > 0, true);
+            assert.equal(genf({time: 200}), 200);
+            assert.equal(genf({time: 543}), 543);
         });
     });
     

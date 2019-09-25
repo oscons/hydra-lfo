@@ -18,8 +18,8 @@ describe('Overall', function () {
         it("Can multi init", function () {
             const my_state = {};
 
-            let lfo0 = hydralfo.init(my_state, true, true);
-            let lfo2 = hydralfo.init({}, true, false);
+            let lfo0 = hydralfo.init({state: my_state, force: true});
+            let lfo2 = hydralfo.init({state: my_state, force: false});
 
             lfo2.map((input, gen_args) => {
                 gen_args.global_state.foo = 'bar';
@@ -29,7 +29,7 @@ describe('Overall', function () {
             assert.equal(my_state.foo, 'bar');
 
             const state2 = {};
-            lfo2 = hydralfo.init(state2, false, false);
+            lfo2 = hydralfo.init({state: state2, init_global: false});
 
             lfo2.map((input, gen_args) => {
                 gen_args.global_state.foo = 'baz';

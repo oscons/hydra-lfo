@@ -39,7 +39,9 @@
     "dist/hydralfo.min.js",
     "dist/hydralfo.min.js.map"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "pure-uuid": "^1.5.7"
+  },
   "devDependencies": {
     "@babel/core": "^7.6.0",
     "@babel/preset-env": "^7.6.0",

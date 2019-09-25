@@ -16,11 +16,7 @@ _functions.sin = {fun: (args) => {
         const [fv, sv, ov] = freeze_values([frequency, scale, offset], run_args, gen_args);
         let time = 0;
 
-        if (typeof input === 'undefined') {
-            time = get_time(gen_args, run_args, true);
-        } else {
-            time = input;
-        }
+        time = undefault(input, get_time(gen_args, run_args, true));
         time = undefault(time, 0.25);
 
         return (((Math.sin(time * TAU * fv) / 2) + 0.5) * sv) + ov;
@@ -58,10 +54,9 @@ _functions.range = {fun: (args) => {
     return (input, gen_args, run_args) => {
         const [uv, lv, sv] = freeze_values([upper, lower, step], run_args, gen_args);
         
-        let idx = input;
-        if (typeof idx === 'undefined') {
-            idx = get_time(gen_args, run_args);
-        }
+        let idx = undefault(input, get_time(gen_args, run_args, true));
+        
+        idx = undefault(idx, 0);
 
         let ub = uv;
         let lb = lv;
@@ -103,8 +98,9 @@ _functions.choose = {fun: (args) => {
             return 0;
         }
         
-        let idx = undefault(input, 0);
-        idx = idx * sv;
+        let idx = undefault(input, get_time(gen_args, run_args, true));
+
+        idx = undefault(idx, 0) * sv;
 
         idx = Math.floor(Math.abs(idx));
         idx = idx % vv.length;
