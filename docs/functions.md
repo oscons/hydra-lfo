@@ -9,14 +9,14 @@ permalink: /functions/
 
 {% assign catfun = site.functions | where: "function_category", category.category_name %}
 
-{% for function in catfun %}[{{ function.function_name }}](#{{ function.url | relative_url }}) - {% endfor %}{% endfor %}
+{% for function in catfun %}[{{ function.function_name }}](#{{ function.function_name }}) - {% endfor %}{% endfor %}
 
 # By name
 
 {% for function in site.functions %}
 
-## [{{ function.function_name }}]({{ function.url | relative_url }})
+ * [{{ function.function_name }}]({{ function.url | relative_url }}) - {{ function.title }}
 
-{{ function.content }}
+{{ function.function_description }}
 
 {% endfor %}
