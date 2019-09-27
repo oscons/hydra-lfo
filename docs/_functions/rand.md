@@ -1,8 +1,3 @@
 ---
-name: rand
-title: rand
-fun_cat: generator
+{"function_name":"rand","title":"rand","function_category":"generator"}
 ---
-## rand
-
-Not documented yet.

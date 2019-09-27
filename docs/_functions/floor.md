@@ -1,8 +1,3 @@
 ---
-name: floor
-title: floor
-fun_cat: maths
+{"function_name":"floor","title":"floor","function_category":"maths"}
 ---
-## floor
-
-Not documented yet.

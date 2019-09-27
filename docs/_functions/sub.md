@@ -1,8 +1,3 @@
 ---
-name: sub
-title: sub
-fun_cat: maths
+{"function_name":"sub","title":"sub","function_category":"maths"}
 ---
-## sub
-
-Not documented yet.

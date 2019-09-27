@@ -1,8 +1,3 @@
 ---
-name: slew
-title: slew
-fun_cat: modifiers
+{"function_name":"slew","title":"slew","function_category":"modifiers"}
 ---
-## slew
-
-Not documented yet.

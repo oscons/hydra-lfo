@@ -47,18 +47,15 @@ const gen_doc = async (doc, dest = path.join('docs')) => {
                     cat_title = category_doc.title;
                     cat_description = category_doc.description;
                 }
+
+                const doc_info = {
+                    category_name
+                    , title: cat_title
+                };
+
                 await write_all(cat_fh, `---
-name: ${category_name}
-title: ${cat_title}
+${JSON.stringify(doc_info)}
 ---
-# ${cat_title}
-
-${cat_description}
-
-{% assign catfuns = site.functions | where: "fun_cat", "${category_name}" %}
-{% for function in catfuns %}
-[{{ function.name }} - {{ function.title }}]({{ function.url }})
-{% endfor %}
 `);
                 
                 await util.cb_to_promise((cb) => fs.close(cat_fh, cb));
@@ -83,14 +80,17 @@ ${cat_description}
                         if (err) {
                             throw new Error(err);
                         }
-                        await write_all(fun_fh, `---
-name: ${fun_name}
-title: ${fun_title}
-fun_cat: ${category_name}
----
-## ${fun_title}
 
-${fun_description}
+                        const doc_info = {
+                            function_name: fun_name
+                            , title: fun_title
+                            , function_category: category_name
+                            , 
+                        };
+
+                        await write_all(fun_fh, `---
+${JSON.stringify(doc_info)}
+---
 `);
                         await util.cb_to_promise((cb) => fs.close(fun_fh, cb));
                     });

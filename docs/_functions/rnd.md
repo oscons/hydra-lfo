@@ -1,8 +1,3 @@
 ---
-name: rnd
-title: rnd
-fun_cat: generator
+{"function_name":"rnd","title":"rnd","function_category":"generator"}
 ---
-## rnd
-
-Not documented yet.

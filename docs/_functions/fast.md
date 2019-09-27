@@ -1,8 +1,3 @@
 ---
-name: fast
-title: fast
-fun_cat: time
+{"function_name":"fast","title":"fast","function_category":"time"}
 ---
-## fast
-
-Not documented yet.

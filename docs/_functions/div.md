@@ -1,8 +1,3 @@
 ---
-name: div
-title: div
-fun_cat: maths
+{"function_name":"div","title":"div","function_category":"maths"}
 ---
-## div
-
-Not documented yet.

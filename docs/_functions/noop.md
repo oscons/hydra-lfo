@@ -1,8 +1,3 @@
 ---
-name: noop
-title: noop
-fun_cat: general
+{"function_name":"noop","title":"noop","function_category":"general"}
 ---
-## noop
-
-Not documented yet.

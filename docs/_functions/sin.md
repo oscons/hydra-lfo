@@ -1,8 +1,3 @@
 ---
-name: sin
-title: sin
-fun_cat: generator
+{"function_name":"sin","title":"sin","function_category":"generator"}
 ---
-## sin
-
-Not documented yet.

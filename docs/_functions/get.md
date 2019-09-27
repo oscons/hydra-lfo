@@ -1,8 +1,3 @@
 ---
-name: get
-title: get
-fun_cat: general
+{"function_name":"get","title":"get","function_category":"general"}
 ---
-## get
-
-Not documented yet.

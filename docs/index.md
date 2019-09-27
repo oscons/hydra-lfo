@@ -29,16 +29,16 @@ More examples can be found on the [examples page]({{ xpage.url }})
 
 # List of functions
 
-{% assign xpage = site.pages | where: "name", "all_functions.md" | first %}
+{% assign xpage = site.pages | where: "name", "functions.md" | first %}
 
 [All functions reference on one page]({{ xpage.url }})
 
 {% for category in site.categories %}
 ## [{{ category.title }}]({{ category.url }})
 
-{% assign catfun = site.functions | where: "fun_cat", category.name %}
+{% assign catfun = site.functions | where: "function_category", category.category_name %}
 
-{% for function in catfun %}[{{ function.name }}]({{ function.url }}) - {% endfor %}{% endfor %}
+{% for function in catfun %}[{{ function.function_name }}]({{ function.url }}) - {% endfor %}{% endfor %}
 
 # Other
 

@@ -1,8 +1,3 @@
 ---
-name: range
-title: range
-fun_cat: generator
+{"function_name":"range","title":"range","function_category":"generator"}
 ---
-## range
-
-Not documented yet.

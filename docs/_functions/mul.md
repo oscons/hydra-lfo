@@ -1,8 +1,3 @@
 ---
-name: mul
-title: mul
-fun_cat: maths
+{"function_name":"mul","title":"mul","function_category":"maths"}
 ---
-## mul
-
-Not documented yet.

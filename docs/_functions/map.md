@@ -1,8 +1,3 @@
 ---
-name: map
-title: map
-fun_cat: modifiers
+{"function_name":"map","title":"map","function_category":"modifiers"}
 ---
-## map
-
-Not documented yet.

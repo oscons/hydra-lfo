@@ -1,8 +1,3 @@
 ---
-name: time
-title: time
-fun_cat: time
+{"function_name":"time","title":"time","function_category":"time"}
 ---
-## time
-
-Not documented yet.

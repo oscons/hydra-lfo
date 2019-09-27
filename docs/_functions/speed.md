@@ -1,8 +1,3 @@
 ---
-name: speed
-title: speed
-fun_cat: time
+{"function_name":"speed","title":"speed","function_category":"time"}
 ---
-## speed
-
-Not documented yet.

@@ -1,8 +1,3 @@
 ---
-name: used
-title: used
-fun_cat: general
+{"function_name":"used","title":"used","function_category":"general"}
 ---
-## used
-
-Not documented yet.

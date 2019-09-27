@@ -31,4 +31,10 @@ defaults:
       type: categories
     values:
       layout: "category"
+  -
+    scope: 
+      path: ""
+      type: examples
+    values:
+      layout: "example"
 ---

@@ -1,8 +1,3 @@
 ---
-name: add
-title: add
-fun_cat: maths
+{"function_name":"add","title":"add","function_category":"maths"}
 ---
-## add
-
-Not documented yet.

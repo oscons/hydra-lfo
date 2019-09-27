@@ -1,8 +1,3 @@
 ---
-name: choose
-title: choose
-fun_cat: generator
+{"function_name":"choose","title":"choose","function_category":"generator"}
 ---
-## choose
-
-Not documented yet.

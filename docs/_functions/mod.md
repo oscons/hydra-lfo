@@ -1,8 +1,3 @@
 ---
-name: mod
-title: mod
-fun_cat: maths
+{"function_name":"mod","title":"mod","function_category":"maths"}
 ---
-## mod
-
-Not documented yet.
