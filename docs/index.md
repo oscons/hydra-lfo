@@ -1,6 +1,5 @@
 ---
 title: Hydra LFO - Control utilities for Hydra
-permalink: /
 ---
 
 # Intro
