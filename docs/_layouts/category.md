@@ -3,7 +3,7 @@ layout: default
 ---
 {% capture md %}
 
-[{{ site.title }}](/) >> [Categories](/categories/) >> {{ page.title }}
+[{{ site.title }}]({{ "/" | relative_url }}) >> [Categories]({{ "/categories" | relative_url }}) >> {{ page.title }}
 ------
 
 # {{ page.title }}

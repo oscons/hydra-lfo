@@ -6,7 +6,7 @@ layout: default
 {% assign category = site.categories | where: "category_name", page.function_category | first %}
 
 
-[{{ site.title }}](/) >> [Functions](/functions) >> {{ page.function_name }}
+[{{ site.title }}]({{ "/" | relative_url }}) >> [Functions]({{ "/functions" | relative_url }}) >> {{ page.function_name }}
 
 ------
 
