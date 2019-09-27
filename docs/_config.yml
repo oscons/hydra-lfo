@@ -4,7 +4,6 @@ name: Hydra LFO
 title: Hydra LFO
 url: https://oscons.github.io/hydra-lfo
 repository: https://github.com/oscons/hydra-lfo
-source: "src"
 exclude:
  - ".gitignore"
  - ".jekyll-cache"
