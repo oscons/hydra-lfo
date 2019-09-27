@@ -24,7 +24,7 @@ const write_all = (fh, data) => new Promise((res, rej) => {
     fs.write(fh, data, wcb);
 });
 
-const gen_doc = async (doc, dest = path.join('docs', 'collections')) => {
+const gen_doc = async (doc, dest = path.join('docs')) => {
     const functions_dir = path.join(dest, '_functions');
     const categories_dir = path.join(dest, '_categories');
 

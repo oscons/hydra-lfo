@@ -9,7 +9,6 @@ exclude:
  - ".jekyll-cache"
  - "README.md"
 theme: jekyll-theme-midnight
-collections_dir: "collections"
 collections:
   categories:
     output: true
