@@ -4,7 +4,7 @@ title: Hydra LFO
 description: Control utilities for Hydra visual synthesizer
 keywords: hydra, lfo, visual, synthesizer, live, coding
 url: https://oscons.github.io/hydra-lfo
-# baseurl: /hydra-lfo
+baseurl: /hydra-lfo
 repository: https://github.com/oscons/hydra-lfo
 exclude:
  - ".gitignore"
