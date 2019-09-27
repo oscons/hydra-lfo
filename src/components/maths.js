@@ -72,4 +72,12 @@ _functions.mod = {fun: (args) => {
     };
 }};
 
-export const functions = _functions;
+
+export const functions = {
+    __category: "maths"
+    , __doc: {
+        title: "Math functions"
+        , description: ``
+    }
+    , ..._functions
+};

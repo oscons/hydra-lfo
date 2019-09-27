@@ -6,80 +6,107 @@ import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm
 
 const _functions = {};
 
-_functions.async = {fun: (args) => {
-    const {f: fn, r: run_freq, d: delay} = expand_args({f: ud, r: 1, d: 0}, args);
-
-    const thread_state = {
-        id: uuid()
-        , do_stop: false
-        , running: false
-        , last_args: [ud, ud, ud]
-    };
-
-    return (input, gen_args, run_args) => {
-        thread_state.last_args = [input, gen_args, run_args];
-
-        if (typeof fn === 'undefined') {
-            return input;
+_functions.async = {
+    doc: {
+        title: "Asynchronously execute a function"
+        , params: {
+            f: "Function to execute"
+            , r: "Run frequency"
+            , d: "Delay before first run"
         }
+        , return: ""
+        , description: `
+All parameters are based on the current \`time\` and \`bpm\` values and are
+specified in BPM. Timing is not guaranteed.`
+        , examples: [`
+const x = {v: 3};
+shape(() => x.v).out(o0);
+L.async(() => x.v = ((x.v + 1 ) % 5) + 3);
+`
+        ]
+    }
+    , fun: (args) => {
+        const {f: fn, r: run_freq, d: delay} = expand_args({f: ud, r: 1, d: 0}, args);
 
-        // luckyily javascript is single threaded...
-        let asyncs = gen_args.global_state.async;
-        if (typeof asyncs !== 'undefined') {
-            return input;
-        }
-
-        gen_args.global_state.async = {};
-        asyncs = gen_args.global_state.async;
-
-        if (typeof asyncs[thread_state.id] !== 'undefined') {
-            return input;
-        }
-
-        gen_args.global_state.cleanup.push(() => {
-            thread_state.do_stop = true;
-            thread_state.last_args = [ud, ud, ud];
-        });
-
-        asyncs[thread_state.id] = {
-            init: gen_args.values.time
-            , state: thread_state
+        const thread_state = {
+            id: uuid()
+            , do_stop: false
+            , running: false
+            , last_args: [ud, ud, ud]
         };
 
-        const bpm = get_bpm(gen_args, run_args, false);
-        const beats_to_millis = (n) => Math.max((60 / bpm) / n * 1000, 100);
-        const timeout = run_freq <= 0 ? -1 : beats_to_millis(run_freq);
-        const delayt = beats_to_millis(delay);
-        const env = get_global_env();
-        const tfunc = () => {
-            if (thread_state.do_stop) {
-                return;
-            }
-            const ret = fn(...thread_state.last_args);
-            if (!ret) {
-                return;
-            }
-            if (timeout > 0) {
-                env.setTimeout(tfunc, timeout);
-            }
-        };
+        return (input, gen_args, run_args) => {
+            thread_state.last_args = [input, gen_args, run_args];
 
-        console.log(`startring thread ${thread_state.id}, delayt=${delayt} timeout=${timeout}`);
-        if (typeof env !== 'undefined') {
-            if (delay <= 0) {
-                thread_state.running = true;
-                tfunc();
-            } else {
-                env.setTimeout(() => {
+            if (typeof fn === 'undefined') {
+                return input;
+            }
+
+            // luckyily javascript is single threaded...
+            let asyncs = gen_args.global_state.async;
+            if (typeof asyncs !== 'undefined') {
+                return input;
+            }
+
+            gen_args.global_state.async = {};
+            asyncs = gen_args.global_state.async;
+
+            if (typeof asyncs[thread_state.id] !== 'undefined') {
+                return input;
+            }
+
+            gen_args.global_state.cleanup.push(() => {
+                thread_state.do_stop = true;
+                thread_state.last_args = [ud, ud, ud];
+            });
+
+            asyncs[thread_state.id] = {
+                init: gen_args.values.time
+                , state: thread_state
+            };
+
+            const bpm = get_bpm(gen_args, run_args, false);
+            const beats_to_millis = (n) => Math.max((60 / bpm) / n * 1000, 100);
+            const timeout = run_freq <= 0 ? -1 : beats_to_millis(run_freq);
+            const delayt = beats_to_millis(delay);
+            const env = get_global_env();
+            const tfunc = () => {
+                if (thread_state.do_stop) {
+                    return;
+                }
+                const ret = fn(...thread_state.last_args);
+                if (!ret) {
+                    return;
+                }
+                if (timeout > 0) {
+                    env.setTimeout(tfunc, timeout);
+                }
+            };
+
+            console.log(`startring thread ${thread_state.id}, delayt=${delayt} timeout=${timeout}`);
+            if (typeof env !== 'undefined') {
+                if (delay <= 0) {
                     thread_state.running = true;
                     tfunc();
-                }, delayt);
+                } else {
+                    env.setTimeout(() => {
+                        thread_state.running = true;
+                        tfunc();
+                    }, delayt);
+                }
             }
-        }
-        
-        return input;
-    };
-}};
+            
+            return input;
+        };
+    }
+};
 
-export const functions = _functions;
+export const functions = {
+    __category: "async"
+    , __doc: {
+        title: "Async"
+        , description: ``
+    }
+    , ..._functions
+};
 

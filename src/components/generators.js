@@ -127,4 +127,12 @@ _functions.choose = {fun: (args) => {
     };
 }};
 
-export const functions = _functions;
+
+export const functions = {
+    __category: "generator"
+    , __doc: {
+        title: "Generator functions"
+        , description: ``
+    }
+    , ..._functions
+};

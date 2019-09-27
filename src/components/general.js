@@ -95,4 +95,12 @@ _functions.used = {fun: () => ((_, gen_args) => gen_args.current_value)};
 
 _functions.noop = {fun: () => ((input) => input)};
 
-export const functions = _functions;
+export const functions = {
+    __category: "general"
+    , __doc: {
+        title: "General functions"
+        , description: ``
+    }
+    , ..._functions
+};
+

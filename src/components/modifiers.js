@@ -92,4 +92,11 @@ _functions.map = {fun: (args) => {
     return (value, gen_args, run_args) => func(value, gen_args, ...run_args);
 }};
 
-export const functions = _functions;
+export const functions = {
+    __category: "modifiers"
+    , __doc: {
+        title: "Modifier functions"
+        , description: ``
+    }
+    , ..._functions
+};

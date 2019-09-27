@@ -90,4 +90,11 @@ _functions.time = {fun: (args) => {
     };
 }};
 
-export const functions = _functions;
+export const functions = {
+    __category: "time"
+    , __doc: {
+        title: "Time functions"
+        , description: ``
+    }
+    , ..._functions
+};

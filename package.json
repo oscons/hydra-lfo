@@ -14,7 +14,8 @@
     "build_mini": "browserify --standalone 'hydralfo' --debug -t [ babelify --envName 'build:mini' ] src/*.js | exorcist build/hydralfo.min.js.map > build/hydralfo.min.js",
     "clean": "rimraf dist/*.js build/*",
     "coverage": "cross-env NODE_ENV=test nyc mocha --recursive test",
-    "test": "mocha --recursive test"
+    "test": "mocha --recursive test",
+    "doc": "babel-node scripts/gendoc.js"
   },
   "author": "oscons",
   "license": "GPL-2.0-or-later",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.6.0",
+    "@babel/node": "^7.6.2",
     "@babel/preset-env": "^7.6.0",
     "@babel/register": "^7.6.0",
     "@istanbuljs/nyc-config-babel": "^2.1.1",

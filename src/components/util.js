@@ -2,7 +2,7 @@
  * Licensed under the GNU General Public License, Version 2.0.
  * See LICENSE file for more information */
 
- const UUID = require("pure-uuid");
+const UUID = require("pure-uuid");
 
 // eslint-disable-next-line no-empty-function
 export const ud = ((function () {})());
@@ -152,3 +152,15 @@ export const get_global_env = () => {
 };
 
 export const uuid = () => new UUID(4).format();
+
+export const cb_to_promise = (fn) => new Promise((res, rej) => {
+    const mycb = (...args) => {
+        res(args);
+    };
+    
+    try {
+        fn(mycb);
+    } catch (err) {
+        rej(err);
+    }
+});

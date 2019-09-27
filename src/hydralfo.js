@@ -11,6 +11,8 @@ import {functions as general_functions} from './components/general';
 import {functions as modifier_functions} from './components/modifiers';
 import {functions as async_functions} from './components/async';
 
+const DOCUMENTATION = {};
+
 const BUILTIN_FUNCTIONS = [
     maths_functions
     , generator_functions
@@ -19,25 +21,31 @@ const BUILTIN_FUNCTIONS = [
     , modifier_functions
     , async_functions
 ].reduce((prev, ob) => {
-    Object.entries(ob).forEach(([name, value]) => {
-        prev[name] = value;
-    });
+    let category = "other";
+    if ('__category' in ob) {
+        category = ob.__category;
+    }
+
+    if (!(category in DOCUMENTATION)) {
+        DOCUMENTATION[category] = {};
+    }
+    category = DOCUMENTATION[category];
+
+    if ('__doc' in ob) {
+        category.__doc = ob.__doc;
+    }
+
+    Object.entries(ob)
+        .filter(([name]) => name.indexOf("__") !== 0)
+        .forEach(([name, value]) => {
+            const {fun, doc} = value;
+            category[name] = doc;
+            prev[name] = fun;
+        });
     return prev;
 }, {});
 
-const extract_property = (arr, prop) => Object.entries(arr)
-    .map(([name, value]) => [name, value[prop]])
-    .reduce((prev, [name, value]) => {
-        prev[name] = value;
-        return prev;
-    }, {});
-
-export const get_doc = () => Object.entries(extract_property(BUILTIN_FUNCTIONS, "doc"))
-    .filter(([, doc]) => typeof doc !== 'undefined')
-    .reduce((prev, [name, doc]) => {
-        [prev[name]] = doc;
-        return prev;
-    }, {});
+export const get_doc = () => DOCUMENTATION;
 
 const run_calls = (options, global_state, instance_state, calls, args) => {
 
@@ -103,18 +111,17 @@ const sub_call = (global_state, prev_calls, fun) => {
     run_function.gen = (options) => (...args) => option_call(options, args);
     run_function[CANARY] = true;
 
-    Object.entries(extract_property(BUILTIN_FUNCTIONS, "fun"))
-        .forEach(([name, gen]) => {
-            if (name in run_function && !(name in Object.getOwnPropertyNames())) {
-                throw new Error(`${name} already exists on parents of run_function`);
-            }
+    Object.entries(BUILTIN_FUNCTIONS).forEach(([name, gen]) => {
+        if (name in run_function && !(name in Object.getOwnPropertyNames())) {
+            throw new Error(`${name} already exists on parents of run_function`);
+        }
 
-            run_function[name] = (...args) => sub_call(
-                global_state
-                , calls.map(([call]) => call)
-                , gen(args)
-            );
-        });
+        run_function[name] = (...args) => sub_call(
+            global_state
+            , calls.map(([call]) => call)
+            , gen(args)
+        );
+    });
 
     return run_function;
 };
@@ -125,7 +132,7 @@ const make_new_lfo = (state) => {
     
     global_state.cleanup = [];
 
-    const functions = extract_property(BUILTIN_FUNCTIONS, "fun");
+    const functions = BUILTIN_FUNCTIONS;
 
     Object.keys(functions).forEach((name) => {
         fdef[name] = (...args) => sub_call(global_state, [])[name](...args);
