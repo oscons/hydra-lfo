@@ -14,19 +14,19 @@ layout: default
 {{ page.function_description }}
 ------
 
-Other functions in [{{ category.title }}]({{ category.url }}):
+Other functions in [{{ category.title }}]({{ category.url | relative_url }}):
 
 {% assign ofuncs = site.functions | where: "function_category", page.function_category %}
 {% for ofunc in ofuncs %}
- * [{{ ofunc.function_name }} - {{ ofunc.title }}]({{ ofunc.url }})
+ * [{{ ofunc.function_name }} - {{ ofunc.title }}]({{ ofunc.url | relative_url }})
 {% endfor %}
 
 Other categories:
 
-{% for cat2 in site.categories %}[{{ cat2.title }}]({{ cat2.url }}) - {% endfor %}
+{% for cat2 in site.categories %}[{{ cat2.title }}]({{ cat2.url | relative_url }}) - {% endfor %}
 
 {% assign xpage = site.pages | where: "name", "functions.md" | first %}
-[All functions reference on one page]({{ xpage.url }})
+[All functions reference on one page]({{ xpage.url | relative_url }})
 
 {% endcapture %}
 {{ md | markdownify }}
