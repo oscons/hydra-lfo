@@ -92,11 +92,48 @@ _functions.map = {fun: (args) => {
     return (value, gen_args, run_args) => func(value, gen_args, ...run_args);
 }};
 
+_functions.clip = {doc: {
+    title: "Clip a value between two thresholds"
+    , command: [
+        "clip(u, l, s)", "clip({u, l, s})"
+    ]
+    , params: {
+        u: "Upper bound. Default is 1"
+        , l: "Lower bound. Default is 0"
+        , s: "Scale to apply to inpcoming value *before* clipping. Default is 1"
+        , o: "Offset to add *after* clipping. Default is 0"
+    }
+    , return: "A value in the range of `[l, u] + o`."
+    , description: `Allows you to ensure the values are within an aceptable
+range for the following operations.`
+    , examples: [`shape(3).rotate(
+    L.set(L.time(), 'init')
+        .use('init')
+        .map((x, {time}) => time - x)
+        .clip(10)
+        .map((x) => (10 - x)/10)
+        .rad()
+).out(o0);`
+    ]
+}
+, fun: (args) => {
+    const {u: upper, l: lower, s: scale, o: offset} = expand_args({u: 1, l: 0, s: 1, o: 0}, args);
+
+    return (input, gen_args, run_args) => {
+        const [uv, lv, sv, ov] = freeze_values([upper, lower, scale, offset], run_args, gen_args);
+
+        const v = undefault(input, 0) * sv;
+        
+        return (v > uv ? uv : (v < lv ? lv : v)) + ov;
+    };
+}};
+
 export const functions = {
     __category: "modifiers"
     , __doc: {
         title: "Modifier functions"
-        , description: ``
+        , description: `Functions that modify Hydra LFO values in some way or
+another.`
     }
     , ..._functions
 };

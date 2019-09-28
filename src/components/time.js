@@ -94,7 +94,8 @@ export const functions = {
     __category: "time"
     , __doc: {
         title: "Time functions"
-        , description: ``
+        , description: `Functions that affect the time such as slowing it down
+or speeding it up`
     }
     , ..._functions
 };

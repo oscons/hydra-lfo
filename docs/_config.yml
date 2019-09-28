@@ -10,7 +10,10 @@ exclude:
  - ".gitignore"
  - ".jekyll-cache"
  - "README.md"
+ - "*.scss"
 theme: jekyll-theme-midnight
+plugins:
+  - jekyll-sitemap
 collections:
   categories:
     output: true

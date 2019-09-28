@@ -2,27 +2,36 @@
  * Licensed under the GNU General Public License, Version 2.0.
  * See LICENSE file for more information */
 
-import {ud, undefault, expand_args, freeze_values, mix_values, get_time, get_bpm, get_global_env, uuid} from "./util";
+import {ud, expand_args, get_bpm, get_global_env, uuid} from "./util";
 
 const _functions = {};
 
 _functions.async = {
     doc: {
         title: "Asynchronously execute a function"
+        , command: [
+            'async(f, r, d)'
+            , 'async({f, r, d})'
+        ]
         , params: {
-            f: "Function to execute"
-            , r: "Run frequency"
-            , d: "Delay before first run"
+            f: "Function to execute. Default is `() => {}`"
+            , r: `Run frequency of the function. A value of \`0\` or less will
+result in the function being called only once. Default is \`1\``
+            , d: "Delay before first run. Default is `0`"
         }
-        , return: ""
-        , description: `
-All parameters are based on the current \`time\` and \`bpm\` values and are
-specified in BPM. Timing is not guaranteed.`
-        , examples: [`
-const x = {v: 3};
-shape(() => x.v).out(o0);
-L.async(() => x.v = ((x.v + 1 ) % 5) + 3);
-`
+        , return: "The unaltered input value."
+        , description: `The provided function is run with a frequency of \`r\`
+per time unit. All parameters are based on the current \`time\` and \`bpm\`,
+assuming \`time\` is in beats. Timing is not guaranteed, so \`f\` might drift
+over time.
+
+Internally async is implemented using setTimeout with all implications regarding
+execution context.`
+        , examples: [`const x = {v: 3};
+shape(
+    L.async(() => x.v = ((x.v + 1 ) % 5) + 3)
+        .set(() => x.v)
+).out(o0);`
         ]
     }
     , fun: (args) => {
@@ -104,8 +113,9 @@ L.async(() => x.v = ((x.v + 1 ) % 5) + 3);
 export const functions = {
     __category: "async"
     , __doc: {
-        title: "Async"
-        , description: ``
+        title: "Asynchronous functions"
+        , description: `Functions allowing you to perform actions asynchronously
+to the main processing done in Hydra.`
     }
     , ..._functions
 };

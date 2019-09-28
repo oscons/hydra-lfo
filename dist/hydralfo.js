@@ -2976,6 +2976,29 @@ var _util = require("./util");
  * See LICENSE file for more information */
 const _functions = {};
 _functions.async = {
+  doc: {
+    title: "Asynchronously execute a function",
+    command: ['async(f, r, d)', 'async({f, r, d})'],
+    params: {
+      f: "Function to execute. Default is `() => {}`",
+      r: `Run frequency of the function. A value of \`0\` or less will
+result in the function being called only once. Default is \`1\``,
+      d: "Delay before first run. Default is `0`"
+    },
+    return: "The unaltered input value.",
+    description: `The provided function is run with a frequency of \`r\`
+per time unit. All parameters are based on the current \`time\` and \`bpm\`,
+assuming \`time\` is in beats. Timing is not guaranteed, so \`f\` might drift
+over time.
+
+Internally async is implemented using setTimeout with all implications regarding
+execution context.`,
+    examples: [`const x = {v: 3};
+shape(
+    L.async(() => x.v = ((x.v + 1 ) % 5) + 3)
+        .set(() => x.v)
+).out(o0);`]
+  },
   fun: args => {
     const {
       f: fn,
@@ -3063,7 +3086,15 @@ _functions.async = {
     };
   }
 };
-const functions = _functions;
+const functions = {
+  __category: "async",
+  __doc: {
+    title: "Asynchronous functions",
+    description: `Functions allowing you to perform actions asynchronously
+to the main processing done in Hydra.`
+  },
+  ..._functions
+};
 exports.functions = functions;
 
 },{"./util":11}],6:[function(require,module,exports){
@@ -3081,7 +3112,18 @@ var _util = require("./util");
  * See LICENSE file for more information */
 const _functions = {};
 _functions.set = {
-  doc: ``,
+  doc: {
+    title: "Set a value",
+    command: ['set(v, t)', 'set({v, t})'],
+    params: {
+      v: `The value to set. This can either be a scalar value or a
+function that returns a scalar value.`
+    },
+    return: "The set value",
+    description: `Set the `,
+    see_also: ['use', 'time'],
+    examples: ['Shape(L.set(5))', 'Shape(L.set(({time}) => time % 5))', 'Shape(L.set(({time}) => time + 5).)']
+  },
   fun: args => {
     let avalue = 0;
     let tgt_value = _util.ud;
@@ -3138,6 +3180,27 @@ _functions.set = {
   }
 };
 _functions.use = {
+  doc: {
+    title: "Set the currently modified value.",
+    command: ["use(n, c)", "use({n, c})"],
+    params: {
+      n: `The name of the value. The default value is \`val\`. You can
+manipulate \`time\` or \`bpm\` or any other string value as well.`,
+      c: `Should the currently in use value be copied over to the new on
+one. Either \`true\` to copy or \`false\` to keep the value untouched. Defaul
+is \`false\``
+    },
+    return: "The currently in use value.",
+    description: `You can manipulate a custom list of values which
+you can refer to by name. The \`val\` value is the default used initially.
+The last value that's in \`use\` will be what the LFO function finally returns.
+
+Though \`fast\` and
+the likes are the preferred way to manipulate time you can also use
+\`use('time')\` to manipulate time directly or return its value from the LFO 
+function.`,
+    examples: ["shape(L.set(10).use('time').mul(2).use('val')).out(o0)", "shape(10, L.use('time').add(1).use('val').sin().add(1)).out(o0)"]
+  },
   fun: args => {
     const {
       n: name,
@@ -3160,7 +3223,17 @@ _functions.use = {
   }
 };
 _functions.get = {
-  fun: args => {
+  doc: {
+    title: "Set the current value to a named one.",
+    command: ["get(n)", "get({n})"],
+    params: {
+      n: "The name of the value to get, e.g. `time` to get the current time. Default value is `val`"
+    },
+    return: "The value saved unter the name specified by `n`. Can be undefined.",
+    description: ``,
+    examples: ["shape(3, L.get('time').mul(2).use('time', true).sin(1, 0.5, 0.5)).out(o0)"]
+  },
+  un: args => {
     const {
       n: name
     } = (0, _util.expand_args)({
@@ -3175,12 +3248,49 @@ _functions.get = {
   }
 };
 _functions.used = {
+  doc: {
+    title: "Return the name of the currently in `use` value",
+    command: ["used()"],
+    params: {},
+    return: "The name set by the last `use` command or `val` if not set at all.",
+    description: `This function allows you to retrieve the name of the
+current default parameter that is modufied by functions like \`mul\` or \`set\`.
+
+This is usually most helpful for debugging purposes, though you could use it in
+\`map\` too.`,
+    examples: ["console.log(L.used()) // == 'val'", "console.log(L.use('time').used()) == 'time'", `
+shape(3)
+    .rotate(
+        L.use(() => time % 2 < 1 ? "cos" : "sin"))
+            .used()
+            .map((x, {time}) => eval(\`Math.$\{x}(time)\`))
+            .mul(2)
+    ).out(o0)
+`]
+  },
   fun: () => (_, gen_args) => gen_args.current_value
 };
 _functions.noop = {
+  doc: {
+    title: "Do nothing",
+    command: ["noop()"],
+    params: {},
+    return: "The unmodified input value.",
+    description: `This function performs no operation. It's mostly used
+for debugging and testing purposes`,
+    examples: ["L.noop().gen()({val: 2}) // == 2", "L.time().noop().run({time: 2}) // == 2"]
+  },
   fun: () => input => input
 };
-const functions = _functions;
+const functions = {
+  __category: "general",
+  __doc: {
+    title: "General Hydra LFO utility functions",
+    description: `Functions that perform various tasks on Hydra LFO
+values or its processing chain.`
+  },
+  ..._functions
+};
 exports.functions = functions;
 
 },{"./util":11}],7:[function(require,module,exports){
@@ -3338,7 +3448,15 @@ _functions.choose = {
     };
   }
 };
-const functions = _functions;
+const functions = {
+  __category: "generator",
+  __doc: {
+    title: "Generator functions",
+    description: `Functions that generate values and can be used as the
+the source for other functions and parameters.`
+  },
+  ..._functions
+};
 exports.functions = functions;
 
 },{"./util":11}],8:[function(require,module,exports){
@@ -3347,15 +3465,29 @@ exports.functions = functions;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.functions = void 0;
+exports.functions = exports.TAU = void 0;
 
 var _util = require("./util");
 
 /* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
  * Licensed under the GNU General Public License, Version 2.0.
  * See LICENSE file for more information */
+const TAU = 2 * Math.PI;
+exports.TAU = TAU;
 const _functions = {};
 _functions.add = {
+  doc: ({
+    doc_link
+  }) => ({
+    title: "Add a value",
+    command: ["add(v)", "add({v})"],
+    params: {
+      v: "The value to add. Default is 0"
+    },
+    return: "The previous value plus the added value `v`.",
+    description: `Add a value to the current value, depending on ${doc_link('use', "`use`")}`,
+    examples: ["shape(L.time().mod(3).add(2).floor()).out(o0)", "shape(3,L.time().mod(3).div(6).add(L.sin({f:1/2,s:0.2,o:0.1}))).out(o0)"]
+  }),
   fun: args => {
     const {
       v: value
@@ -3369,6 +3501,18 @@ _functions.add = {
   }
 };
 _functions.sub = {
+  doc: ({
+    doc_link
+  }) => ({
+    title: "Subtract a value",
+    command: ["sub(v)", "sub({v})"],
+    params: {
+      v: "The value to subtract. Default is 0"
+    },
+    return: "The previous value minus the subtracted value `v`.",
+    description: `Subtract a value from the current value, depending on ${doc_link('use', "`use`")}`,
+    examples: ["shape(3).scrollY(-0.2).rotate(L.time().mod(10).sub(5).floor().rad(1/10)).out(o0)"]
+  }),
   fun: args => {
     const {
       v: value
@@ -3382,6 +3526,20 @@ _functions.sub = {
   }
 };
 _functions.floor = {
+  doc: ({
+    doc_link
+  }) => ({
+    title: "Roud down to the nearest number of digits",
+    command: ["floor(d)", "floor({d})"],
+    params: {
+      d: `The number of digits after the decimal point to round down to.
+Default is 0 which is effectively the nearest lower integer.`
+    },
+    return: "Rounded value",
+    description: `Rounds the current value down to the specified number of decimal places. This can
+be used to discretize continous valued functions.`,
+    examples: ["shape(3).scrollY(L.range({u:10,s:0.5}).floor(1)).out(o0)"]
+  }),
   fun: args => {
     const {
       d: digits
@@ -3445,7 +3603,31 @@ _functions.mod = {
     };
   }
 };
-const functions = _functions;
+_functions.rad = {
+  fun: args => {
+    const {
+      s: scale,
+      o: offset
+    } = (0, _util.expand_args)({
+      s: 1,
+      o: 0
+    }, args);
+    return (input, gen_args, run_args) => {
+      const [sv, ov] = (0, _util.freeze_values)([scale, offset], run_args, gen_args);
+      const rv = (0, _util.undefault)(input, 0);
+      return (rv + ov) * sv * TAU;
+    };
+  }
+};
+const functions = {
+  __category: "maths",
+  __doc: {
+    title: "Math related functions",
+    description: `Various generally maths related functions that act on
+Hydra LFO values.`
+  },
+  ..._functions
+};
 exports.functions = functions;
 
 },{"./util":11}],9:[function(require,module,exports){
@@ -3565,7 +3747,56 @@ _functions.map = {
     return (value, gen_args, run_args) => func(value, gen_args, ...run_args);
   }
 };
-const functions = _functions;
+_functions.clip = {
+  doc: {
+    title: "Clip a value between two thresholds",
+    command: ["clip(u, l, s)", "clip({u, l, s})"],
+    params: {
+      u: "Upper bound. Default is 1",
+      l: "Lower bound. Default is 0",
+      s: "Scale to apply to inpcoming value *before* clipping. Default is 1",
+      o: "Offset to add *after* clipping. Default is 0"
+    },
+    return: "A value in the range of `[l, u] + o`.",
+    description: `Allows you to ensure the values are within an aceptable
+range for the following operations.`,
+    examples: [`shape(3).rotate(
+    L.set(L.time(), 'init')
+        .use('init')
+        .map((x, {time}) => time - x)
+        .clip(10)
+        .map((x) => (10 - x)/10)
+        .rad()
+).out(o0);`]
+  },
+  fun: args => {
+    const {
+      u: upper,
+      l: lower,
+      s: scale,
+      o: offset
+    } = (0, _util.expand_args)({
+      u: 1,
+      l: 0,
+      s: 1,
+      o: 0
+    }, args);
+    return (input, gen_args, run_args) => {
+      const [uv, lv, sv, ov] = (0, _util.freeze_values)([upper, lower, scale, offset], run_args, gen_args);
+      const v = (0, _util.undefault)(input, 0) * sv;
+      return (v > uv ? uv : v < lv ? lv : v) + ov;
+    };
+  }
+};
+const functions = {
+  __category: "modifiers",
+  __doc: {
+    title: "Modifier functions",
+    description: `Functions that modify Hydra LFO values in some way or
+another.`
+  },
+  ..._functions
+};
 exports.functions = functions;
 
 },{"./util":11}],10:[function(require,module,exports){
@@ -3691,7 +3922,15 @@ _functions.time = {
     };
   }
 };
-const functions = _functions;
+const functions = {
+  __category: "time",
+  __doc: {
+    title: "Time functions",
+    description: `Functions that affect the time such as slowing it down
+or speeding it up`
+  },
+  ..._functions
+};
 exports.functions = functions;
 
 },{"./util":11}],11:[function(require,module,exports){
@@ -3701,7 +3940,7 @@ exports.functions = functions;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.uuid = exports.get_global_env = exports.freeze_values = exports.get_bpm = exports.get_time = exports.expand_args = exports.undefault = exports.mix_values = exports.CANARY = exports.ud = void 0;
+exports.cb_to_promise = exports.uuid = exports.get_global_env = exports.freeze_values = exports.get_bpm = exports.get_time = exports.expand_args = exports.undefault = exports.mix_values = exports.CANARY = exports.ud = void 0;
 
 /* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
  * Licensed under the GNU General Public License, Version 2.0.
@@ -3888,6 +4127,20 @@ const uuid = () => new UUID(4).format();
 
 exports.uuid = uuid;
 
+const cb_to_promise = fn => new Promise((res, rej) => {
+  const mycb = (...args) => {
+    res(args);
+  };
+
+  try {
+    fn(mycb);
+  } catch (err) {
+    rej(err);
+  }
+});
+
+exports.cb_to_promise = cb_to_promise;
+
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"pure-uuid":4}],12:[function(require,module,exports){
@@ -3915,22 +4168,36 @@ var _async = require("./components/async");
 /* Copyright (C) 2019  oscons (github.com/oscons). All rights reserved.
  * Licensed under the GNU General Public License, Version 2.0.
  * See LICENSE file for more information */
+const DOCUMENTATION = {};
 const BUILTIN_FUNCTIONS = [_maths.functions, _generators.functions, _time.functions, _general.functions, _modifiers.functions, _async.functions].reduce((prev, ob) => {
-  Object.entries(ob).forEach(([name, value]) => {
-    prev[name] = value;
+  let category = "other";
+
+  if ('__category' in ob) {
+    category = ob.__category;
+  }
+
+  if (!(category in DOCUMENTATION)) {
+    DOCUMENTATION[category] = {};
+  }
+
+  category = DOCUMENTATION[category];
+
+  if ('__doc' in ob) {
+    category.__doc = ob.__doc;
+  }
+
+  Object.entries(ob).filter(([name]) => name.indexOf("__") !== 0).forEach(([name, value]) => {
+    const {
+      fun,
+      doc
+    } = value;
+    category[name] = doc;
+    prev[name] = fun;
   });
   return prev;
 }, {});
 
-const extract_property = (arr, prop) => Object.entries(arr).map(([name, value]) => [name, value[prop]]).reduce((prev, [name, value]) => {
-  prev[name] = value;
-  return prev;
-}, {});
-
-const get_doc = () => Object.entries(extract_property(BUILTIN_FUNCTIONS, "doc")).filter(([, doc]) => typeof doc !== 'undefined').reduce((prev, [name, doc]) => {
-  [prev[name]] = doc;
-  return prev;
-}, {});
+const get_doc = () => DOCUMENTATION;
 
 exports.get_doc = get_doc;
 
@@ -3998,7 +4265,7 @@ const sub_call = (global_state, prev_calls, fun) => {
   run_function.gen = options => (...args) => option_call(options, args);
 
   run_function[_util.CANARY] = true;
-  Object.entries(extract_property(BUILTIN_FUNCTIONS, "fun")).forEach(([name, gen]) => {
+  Object.entries(BUILTIN_FUNCTIONS).forEach(([name, gen]) => {
     if (name in run_function && !(name in Object.getOwnPropertyNames())) {
       throw new Error(`${name} already exists on parents of run_function`);
     }
@@ -4012,7 +4279,7 @@ const make_new_lfo = state => {
   const fdef = {};
   const global_state = (0, _util.undefault)(state, {});
   global_state.cleanup = [];
-  const functions = extract_property(BUILTIN_FUNCTIONS, "fun");
+  const functions = BUILTIN_FUNCTIONS;
   Object.keys(functions).forEach(name => {
     fdef[name] = (...args) => sub_call(global_state, [])[name](...args);
   });

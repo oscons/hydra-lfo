@@ -132,7 +132,8 @@ export const functions = {
     __category: "generator"
     , __doc: {
         title: "Generator functions"
-        , description: ``
+        , description: `Functions that generate values and can be used as the
+the source for other functions and parameters.`
     }
     , ..._functions
 };

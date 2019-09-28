@@ -1,10 +1,12 @@
 ---
 layout: default
 ---
+{% capture crumb %}
+[{{ site.title }}]({{ "/" | relative_url }}) >> [Categories]({{ "/categories" | relative_url }}) >> {{ page.title }}
+{% endcapture %}
 {% capture md %}
 
-[{{ site.title }}]({{ "/" | relative_url }}) >> [Categories]({{ "/categories" | relative_url }}) >> {{ page.title }}
-------
+{{ crumb }}
 
 # {{ page.title }}
 
@@ -14,6 +16,9 @@ layout: default
 {% for function in catfuns %}
 [{{ function.function_name }} - {{ function.title }}]({{ function.url | relative_url }})
 {% endfor %}
-------
+
+--------
+{{ crumb }}
+
 {% endcapture %}
 {{ md | markdownify }}

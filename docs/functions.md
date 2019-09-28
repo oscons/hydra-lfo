@@ -2,7 +2,10 @@
 title: All functions
 permalink: /functions/
 ---
-
+{% capture crumb %}
+[{{ site.title }}]({{ "/" | relative_url }}) >> Functions
+{% endcapture %}
+{{ crumb }}
 # By category
 {% for category in site.categories %}
 ## [{{ category.title }}]({{ category.url | relative_url }})
@@ -15,8 +18,13 @@ permalink: /functions/
 
 {% for function in site.functions %}
 
- * [{{ function.function_name }}]({{ function.url | relative_url }}) - {{ function.title }}
+### [{{ function.function_name }}]({{ function.url | relative_url }})
+
+{{ function.title }}
+
+{% if function.doc.description %}{{ function.doc.description }}{% endif %}
 
 {{ function.function_description }}
-
 {% endfor %}
+--------
+{{ crumb }}
