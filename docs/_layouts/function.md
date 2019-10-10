@@ -5,7 +5,7 @@ layout: default
 [{{ site.title }}]({{ "/" | relative_url }}) >> [Functions]({{ "/functions" | relative_url }}) >> {{ page.function_name }}
 {% endcapture %}
 {% capture md %}
-{{ crumb }}
+{{ crumb }} <<  source: [src/components/{{ page.function_category }}.js](https://github.com/oscons/hydra-lfo/master/src/components/{{ page.function_category }}.js)
 
 {% assign category = site.categories | where: "category_name", page.function_category | first %}
 

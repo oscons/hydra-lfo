@@ -164,3 +164,6 @@ export const cb_to_promise = (fn) => new Promise((res, rej) => {
         rej(err);
     }
 });
+
+export const time_to_beats = (time, bpm) => time / 60 * bpm;
+export const beats_to_time = (beats, bpm) => beats * 60 / bpm;

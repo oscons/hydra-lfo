@@ -17,8 +17,8 @@ const ud = ((function () {})());
 describe('Time functions', function () {
     describe('time', function () {
         [
-            ["should get the time value", [{}, 500, 500]]
-            , ["should scale the time value", [{s: 2}, 500, 1000], [{s: 4}, 500, 2000], [{s: 0.5}, 500, 250]]
+            ["should get the time value", [{}, 600, 600]]
+            , ["should scale the time value", [{s: 2}, 600, 1200], [{s: 4}, 600, 2400], [{s: 0.5}, 600, 300]]
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
                 cases.forEach(([parms, time, expected], i) => {
@@ -38,14 +38,14 @@ describe('Time functions', function () {
 
     describe('speed', function () {
         [
-            ["should not scale the time value", [1, {}, 500, 500], [1, ud, 500, 500], [1, [], 500, 500]]
+            ["should not scale the time value", [1, {}, 600, 600], [1, ud, 600, 600], [1, [], 600, 600]]
             , ["should scale the time value"
-                , [1, {v: 2}, 500, 1000]
-                , [1, 4, 500, 2000]
-                , [1, {v: 0.5}, 500, 250]
-                , [0, {v: 1}, 500, 500]
-                , [ud, {v: 0.5}, 500, 250]
-                , [2, {v: 1, m: 0.5}, 500, 750]
+                , [1, {v: 2}, 600, 1200]
+                , [1, 4, 600, 2400]
+                , [1, {v: 0.5}, 600, 300]
+                , [0, {v: 1}, 600, 600]
+                , [ud, {v: 0.5}, 600, 300]
+                , [2, {v: 1, m: 0.5}, 600, 900]
             ]
         ].forEach(([msg, ...cases]) => {
             it(`${msg}`, function () {
@@ -114,7 +114,12 @@ describe('Time functions', function () {
                         const v = fn.time().run({time});
                         const v2 = fn.gen({return_undef: true})({time});
                         assert.equal(v2, init);
-                        assert.equal(v, fexpected, `case ${i + 1}, run ${j + 1}: r=${v} expected=${fexpected} i=${init} t=${time} s=${slow_res} f=${fast_res}`);
+                        assert.equal(
+                            v
+                            , fexpected
+                            , `case ${i + 1}, run ${j + 1}: r=${v} `
+                                + `expected=${fexpected} i=${init} t=${time} s=${slow_res} f=${fast_res}`
+                        );
                     });
                 });
             });

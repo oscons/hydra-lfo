@@ -4,25 +4,26 @@ description: Documentation for the Hydra LFO control function library.
 ---
 # Intro
 
-`Hydra LFO` is a collection of functions that make creating control functions
+Hydra LFO is a collection of functions that make creating control functions
 for Hydra parameters easier.
 
 ## tl;dr
 
-Allows you to write something like this:
+Hydra LFO allows you to write something like this:
 
 ```javascript
 L = hydralfo.init()
 
 shape(3)
-    .scale(L.sin(1/4, 5, 2)) // frequency = 1/2, scale=5, offset=2
+    // frequency = 1/4, scale=0.5 [0 .. 0.5), offset=0.2
+    .scale(L.sin(1/4, 0.5, 0.2)) 
     .out(o0)
 ```
 
 Instead of this:
 
 ```javascript
-shape(7)
+shape(3)
     .scale(({time}) => ((Math.sin(time*1/4*2*Math.PI)/2+0.5)*0.5)+0.2)
     .out(o0)
 ```
@@ -36,7 +37,7 @@ of the visuals and is a nice addition for live coded audio, e.g. with [Tidalcycl
 Check out [Hydra's GitHub page](https://github.com/ojack/hydra) for more
 information on Hydra and links to videos.
 
-## Why would I need Hydra LFO?
+## Why would you need Hydra LFO?
 
 Hydra allows controlling parameters with functions instead of hard coded values.
 This is akin to the Low Frequency Oscillators (LFO) used in
@@ -46,13 +47,13 @@ While writing control functions in plain JavaScript is not difficult, it tends
 to be pretty verbose and one starts re-implementing functions for every
 performance.
 
-The idea of Hydra LFO is to provide a common tool set of LFO and related
+The idea of Hydra LFO is to provide a common tool set of LFOs and related
 functions in a way that's also (somewhat) intelligible for the audience by
 naming things after what they do. Combining the simple tools is possible in
-a streamlined manner that also conveys the flow of data through the functions.
+a streamlined manner which also conveys the flow of data through the functions.
 
 In the end, the main goal is to stop worrying about writing infrastructure and
-boilerplate and concentrate on fiddling with Hydra instead of JavaScript.
+boilerplate code and focus on working with Hydra instead of JavaScript.
 
 # Usage
 

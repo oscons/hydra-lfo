@@ -156,4 +156,28 @@ describe("Utilities ", function () {
             assert.equal(res.length < 2, true, `Total collisions: ${res.reduce((x, [, cnt]) => x + cnt, 0)}`);
         });
     });
+    describe("time/beats conversion", function () {
+        it("converts correctly", function () {
+            assert.equal(utils.time_to_beats(0, 60), 0);
+            assert.equal(utils.time_to_beats(60, 60), 60);
+            assert.equal(utils.time_to_beats(60, 120), 120);
+            assert.equal(utils.time_to_beats(30, 120), 60);
+
+            assert.equal(utils.beats_to_time(0, 60), 0);
+            assert.equal(utils.beats_to_time(60, 60), 60);
+            assert.equal(utils.beats_to_time(120, 60), 120);
+            assert.equal(utils.beats_to_time(120, 120), 60);
+            
+            [0, 3, 99, 102, 204, 300].forEach((t) => {
+                [60, 120, 240, 30, 15].forEach((bpm) => {
+                    const v = utils.beats_to_time(utils.time_to_beats(t, bpm), bpm);
+                    assert.equal(
+                        v
+                        , t
+                        , `Conversion failed: t=${t} bpm=${bpm} result=${v}`
+                    );
+                });
+            });
+        });
+    });
 });

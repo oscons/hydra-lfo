@@ -1,11 +1,11 @@
 ---
 {
   "function_name": "floor",
-  "title": "Roud down to the nearest number of digits",
+  "title": "Round down to the nearest number of digits",
   "function_category": "maths",
   "description": "Rounds the current value down to the specified number of decimal places. This can\nbe used to discretize continous valued functions.",
   "doc": {
-    "title": "Roud down to the nearest number of digits",
+    "title": "Round down to the nearest number of digits",
     "command": [
       "floor(d)",
       "floor({d})"

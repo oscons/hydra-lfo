@@ -38,10 +38,10 @@ describe('Modifier functions', function () {
             assert.equal(v, 2.25);
 
             [
-                [ud, 0, 200, 0.5]
-                , [{}, 0, 200, 0.5]
-                , [{s: 0.5, i: 1, t: 'h'}, 0, 200, 0.5]
-                , [{s: 1, i: 1, t: 'h'}, 0, 200, 0.5]
+                [ud, 0, 240, 0.5]
+                , [{}, 0, 240, 0.5]
+                , [{s: 0.5, i: 1, t: 'h'}, 0, 240, 0.5]
+                , [{s: 1, i: 1, t: 'h'}, 0, 240, 0.5]
             ].forEach(([parms, start, cnt, stepsz], cknum) => {
                 p.x = start;
                 const fnx = L
@@ -53,14 +53,16 @@ describe('Modifier functions', function () {
                 // call once to init
                 assert.equal(fnx({time: time++}), start);
 
+                const threshold = 0.0000001;
                 Array(Math.floor(cnt / stepsz)).fill(1)
                     .forEach((_, i) => {
                         p.x = cnt;
                         v = fnx({time: time++});
                         assert.equal(
-                            v
-                            , start + ((i + 1) * stepsz)
-                            , `check ${cknum + 1}: start=${start} tgt=${cnt} i=${i} v=${v}`
+                            Math.abs((start + ((i + 1) * stepsz) - v)) < threshold
+                            , true
+                            , `check ${cknum + 1}: start=${start} tgt=${cnt} i=${i} v=${v} `
+                                + `parms=${JSON.stringify(parms)}`
                         );
                     });
             });

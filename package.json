@@ -6,13 +6,16 @@
     "type": "git",
     "url": "https://github.com/oscons/hydra-lfo"
   },
+  "main": "dist/hydralfo.lib.js",
   "scripts": {
-    "dist": "npm run rebuild && copyfiles -u 1 build/hydralfo* dist/",
+    "dist": "npm run rebuild && copyfiles -u 1 build/hydralfo* dist/ && npm run doc",
     "rebuild": "npm run clean && npm run build",
-    "build": "npm run build_normal && npm run build_mini",
+    "build": "npm run build_lib && npm run build_normal && npm run build_mini",
+    "build_lib_old": "browserify --no-bundle-external --node -r ./src/hydralfo.js:hydra-lfo --debug -t babelify > dist/hydralfo.lib.js",
+    "build_lib": "rollup -c rollup.config.js",
     "build_normal": "browserify --standalone 'hydralfo' --debug -t babelify src/*.js | exorcist build/hydralfo.js.map > build/hydralfo.js",
     "build_mini": "browserify --standalone 'hydralfo' --debug -t [ babelify --envName 'build:mini' ] src/*.js | exorcist build/hydralfo.min.js.map > build/hydralfo.min.js",
-    "clean": "rimraf dist/*.js build/*",
+    "clean": "rimraf dist/* build/*",
     "coverage": "cross-env NODE_ENV=test nyc mocha --recursive test",
     "test": "mocha --recursive test",
     "doc": "babel-node scripts/gendoc.js"
@@ -34,16 +37,11 @@
     "sourceMap": false,
     "instrument": false
   },
-  "files": [
-    "dist/hydralfo.js",
-    "dist/hydralfo.js.map",
-    "dist/hydralfo.min.js",
-    "dist/hydralfo.min.js.map"
-  ],
   "dependencies": {
     "pure-uuid": "^1.5.7"
   },
   "devDependencies": {
+    "@babel/cli": "^7.6.2",
     "@babel/core": "^7.6.0",
     "@babel/node": "^7.6.2",
     "@babel/preset-env": "^7.6.0",
@@ -63,6 +61,7 @@
     "nyc": "^14.1.1",
     "rewire": "^4.0.1",
     "rimraf": "^3.0.0",
+    "rollup": "^1.23.1",
     "tinyify": "^2.5.1",
     "watchify": "^3.11.1"
   }

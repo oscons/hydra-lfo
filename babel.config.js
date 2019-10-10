@@ -7,7 +7,7 @@ module.exports = function (api) {
         presets: [
             ["@babel/preset-env", {
                 targets: "> 10%, not dead"
-                , modules: "cjs"
+                // , modules: "cjs"
             }]
         ]
         , plugins: []

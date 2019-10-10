@@ -182,4 +182,26 @@ describe('Generators', function () {
             });
         });
     });
+
+    describe('complex', function () {
+        it("generates expected values", function () {
+            [
+                [0, [], [{}, 0]]
+                , [ud, [], [{time: 0}, 0], [{time: 1}, 1], [{time: 3}, 1]]
+                , [1, [], [{}, 1]]
+                , [1, [[0, 1, 2]], [{}, 2]]
+            ].forEach(([init, params, ...runs], caseno) => {
+                
+                runs.forEach(([runparm, result], runno) => {
+                    const v = L.set(init).complex(...params).run(runparm);
+                    assert.equal(
+                        v
+                        , result
+                        , `case ${caseno + 1}, run ${runno + 1}: v=${v} expected=${result}`
+                    );
+                });
+            });
+        });
+    });
+
 });

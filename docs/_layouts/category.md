@@ -10,7 +10,7 @@ layout: default
 
 # {{ page.title }}
 
-{{ page.category_description }}
+{{ page.doc.description }}
 
 {% assign catfuns = site.functions | where: "function_category", page.category_name %}
 {% for function in catfuns %}

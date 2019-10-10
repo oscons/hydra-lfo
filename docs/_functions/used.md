@@ -15,7 +15,7 @@
     "examples": [
       "console.log(L.used()) // == 'val'",
       "console.log(L.use('time').used()) == 'time'",
-      "\nshape(3)\n    .rotate(\n        L.use(() => time % 2 < 1 ? \"cos\" : \"sin\"))\n            .used()\n            .map((x, {time}) => eval(`Math.${x}(time)`))\n            .mul(2)\n    ).out(o0)\n"
+      "\nshape(3)\n    .rotate(\n        L.use(() => (time % 2 < 1 ? \"cos\" : \"sin\"))\n            .used()\n            .map((x, _, {time}) => eval(`Math.${x}(time)`))\n            .mul(2)\n    ).out(o0)\n\n"
     ]
   }
 }

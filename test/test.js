@@ -90,8 +90,9 @@ describe('Overall', function () {
     });
     describe("initial value", function () {
         it("is same as time", function () {
-            assert.equal(L.noop().run({time: 123}), 123);
-            assert.notEqual(L.noop().run(), 123);
+            assert.equal(L.noop().run({time: 120}), 120);
+            assert.equal(L.noop().run({time: 120, bpm: 120}), 240);
+            assert.notEqual(L.noop().run(), 120);
         });
     });
 });
