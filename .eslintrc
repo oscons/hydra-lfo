@@ -88,5 +88,6 @@
         , "multiline-ternary": "off"
         , "no-ternary": "off"
         , "capitalized-comments": "off"
+        , "max-classes-per-file": "off"
     }
 }
